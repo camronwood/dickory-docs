@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Markdown &amp; Mermaid — Dickory Docs</title>
+  <meta name="description" content="Markdown preview, Mermaid diagrams, and preview deep links in Dickory Docs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/landing.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="../index.html" aria-label="Dickory Docs home">
+        <span class="logo-mark" aria-hidden="true"></span>
+        Dickory Docs
+      </a>
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="index.html">All features</a>
+        <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap feature-deep" style="padding-top: clamp(2rem, 5vw, 3rem);">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> · <a href="index.html">Features</a> · Markdown &amp; Mermaid
+    </nav>
+    <header class="feature-deep-hero">
+      <h1>Markdown &amp; Mermaid preview</h1>
+      <p class="feature-deep-lead">Select a <code>.md</code> file and read rendered HTML in the main pane — with fenced Mermaid blocks turned into SVG diagrams.</p>
+    </header>
+
+    <article class="feature-prose">
+      <h2>Rendering pipeline</h2>
+      <p>The frontend reads file bytes through Tauri commands, parses Markdown with <strong>marked</strong>, sanitises HTML with <strong>DOMPurify</strong>, and injects the result into the preview pane. The window title updates to <code>{heading} · Dickory Docs</code> when a title can be extracted from the document.</p>
+
+      <h2>Mermaid diagrams</h2>
+      <p>Fenced <code>```mermaid</code> blocks are split out and rendered separately via the Mermaid library. Each diagram shows inline in the preview; click to open a modal for large or detailed charts. Failed renders surface an error state with retry.</p>
+
+      <h2>Content hashing</h2>
+      <p>The preview tracks a content hash so it can avoid redundant re-renders when the underlying file has not changed.</p>
+
+      <h2>Preview deep links</h2>
+      <p>For automation or bookmarks, load the app with query parameters:</p>
+      <ul>
+        <li><code>preview=true</code></li>
+        <li><code>workspace={workspaceId}</code></li>
+        <li><code>path={relativePath}</code></li>
+      </ul>
+      <p>On mount, the app selects that Markdown file automatically when all three are present.</p>
+
+      <aside class="repo-links">
+        <h2>Related</h2>
+        <ul>
+          <li><a href="workspaces.html">Workspaces guide</a></li>
+          <li><a href="file-explorer.html">File explorer guide</a></li>
+        </ul>
+      </aside>
+    </article>
+
+    <nav class="feature-nav" aria-labelledby="related-features">
+      <h2 id="related-features">More guides</h2>
+      <div class="feature-nav-grid">
+        <a href="workspaces.html">Workspaces</a>
+        <a href="markdown-and-mermaid.html" aria-current="page">Markdown &amp; Mermaid</a>
+        <a href="file-explorer.html">File explorer</a>
+      </div>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href="../index.html">Dickory Docs</a> — <a href="https://github.com/camronwood/dickory-docs">open source</a></p>
+    </div>
+  </footer>
+</body>
+</html>

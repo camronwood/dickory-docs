@@ -1,0 +1,36 @@
+{
+  "name": "dickory-docs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "icons": "(test -d .venv-icon || (python3 -m venv .venv-icon && .venv-icon/bin/pip install -q Pillow numpy)) && .venv-icon/bin/python scripts/knock_out_background.py assets/source-app-icon.png -o app-icon-source.png && npx @tauri-apps/cli icon app-icon-source.png && cp src-tauri/icons/32x32.png public/favicon.png"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^1.5.3",
+    "dompurify": "^3.0.8",
+    "marked": "^12.0.0",
+    "mermaid": "^11.12.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.9",
+    "@types/dompurify": "^3.0.5",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8"
+  }
+}

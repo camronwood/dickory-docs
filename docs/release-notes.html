@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Release notes — Dickory Docs</title>
+  <meta name="description" content="Release history for Dickory Docs desktop builds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="index.html" aria-label="Dickory Docs home">
+        <span class="logo-mark" aria-hidden="true"></span>
+        Dickory Docs
+      </a>
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="index.html">Landing</a>
+        <a class="btn btn-ghost" href="features/index.html">Feature guides</a>
+        <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap feature-deep" style="padding-top: clamp(2rem, 5vw, 3rem);">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="index.html">Home</a> · Release notes
+    </nav>
+    <header class="feature-deep-hero">
+      <h1>Release notes</h1>
+      <p class="feature-deep-lead">Version history for Dickory Docs. Install artifacts will attach to <a href="https://github.com/camronwood/dickory-docs/releases">GitHub releases</a> when desktop packaging ships.</p>
+    </header>
+
+    <nav class="release-jump" aria-label="Jump to version">
+      <span class="release-jump-label">Jump:</span>
+      <a href="#v0-1-0">v0.1.0</a>
+    </nav>
+
+    <article class="feature-prose">
+      <h2 id="v0-1-0" class="release-version-heading">v0.1.0 <span class="release-date">· May 15, 2026</span></h2>
+      <p>First release under the <strong>Dickory Docs</strong> name (rebrand from Doc Watson).</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li>Tauri + React app: folder workspaces, file explorer, Markdown preview, Mermaid diagrams, plain-text viewer.</li>
+        <li>Workspace persistence under <code>DickoryDocs</code> in the OS config directory; one-time migration from <code>DocWatson</code>.</li>
+        <li>Markdown-only tree filter, resizable explorer panel, create/rename/delete via context menu.</li>
+        <li>Preview deep links: <code>?preview=true&amp;workspace=&amp;path=</code>.</li>
+      </ul>
+      <h3>Site</h3>
+      <ul>
+        <li>GitHub Pages marketing site in <code>docs/</code> (landing, feature guides, release notes).</li>
+      </ul>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>
+        <a href="index.html">Dickory Docs</a>
+        — <a href="https://github.com/camronwood/dickory-docs">open source</a> · Early access
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

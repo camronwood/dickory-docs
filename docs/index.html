@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dickory Docs — Local Markdown and Mermaid viewer</title>
+  <meta name="description" content="Dickory Docs — native desktop app for local Markdown preview, Mermaid diagrams, multi-folder workspaces, and a resizable file explorer. No cloud hub required." />
+  <meta property="og:title" content="Dickory Docs — Local Markdown and Mermaid viewer" />
+  <meta property="og:description" content="Browse folders on disk, preview Markdown with live Mermaid, and keep docs in sync with your repos — open source, early access." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="dev-banner" role="status">
+    <div class="wrap dev-banner-inner">
+      <strong>In development</strong>
+      <span>A full release is on the way. You can <span class="dev-banner-highlight">clone and run from source</span> today — feedback and <a href="https://github.com/camronwood/dickory-docs/pulls">pull requests</a> are welcome.</span>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="https://github.com/camronwood/dickory-docs" aria-label="Dickory Docs on GitHub">
+        <span class="logo-mark" aria-hidden="true"></span>
+        Dickory Docs
+      </a>
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="features/index.html">Feature guides</a>
+        <a class="btn btn-ghost" href="release-notes.html">Release notes</a>
+        <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/blob/main/README.md">README</a>
+        <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">Star on GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <p class="hero-badge">Open source · Local-first · Early access</p>
+        <h1>Your docs, on the clock.<br />Read Markdown where it lives.</h1>
+        <p class="hero-lead">
+          <strong>Dickory Docs</strong> is a native desktop app for <strong>local Markdown</strong> and <strong>Mermaid</strong> — add folder workspaces, browse the tree, and preview rendered docs without a separate server or cloud sync.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">Clone &amp; try the code</a>
+          <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs#quick-start">Quick start</a>
+          <a class="btn btn-ghost" href="features/index.html">Feature guides</a>
+          <a class="btn btn-ghost" href="release-notes.html">Release notes</a>
+        </div>
+        <p class="hero-meta">Tauri · React · Rust · Marked · Mermaid</p>
+      </div>
+    </section>
+
+    <div class="stack-strip">
+      <div class="wrap stack-inner">
+        <span><strong>Workspaces</strong> multiple folders on disk</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>Preview</strong> Markdown + Mermaid inline</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>Explorer</strong> create, rename, delete</span>
+      </div>
+    </div>
+
+    <section class="section-alt" aria-labelledby="capabilities-heading">
+      <div class="wrap">
+        <h2 id="capabilities-heading">What you get</h2>
+        <p class="section-intro">A focused doc viewer for repos and notes — not an IDE, not a chat hub. Everything runs on your machine.</p>
+        <div class="grid-3 highlights-grid">
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">📁</div>
+            <h3>Multi-folder workspaces</h3>
+            <p>Add directories as workspaces; roots and metadata persist under your OS config dir. Git branch and remote show when the folder is a repo.</p>
+            <p class="card-cta"><a class="card-link" href="features/workspaces.html">Deep dive →</a></p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">📝</div>
+            <h3>Markdown &amp; Mermaid</h3>
+            <p>Rendered preview with sanitised HTML, title extraction, and inline Mermaid diagrams you can expand to a modal for complex charts.</p>
+            <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Deep dive →</a></p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">🌲</div>
+            <h3>File explorer</h3>
+            <p>Resizable sidebar, markdown-only filter, context-menu create/rename/delete, and plain-text view for non-Markdown files.</p>
+            <p class="card-cta"><a class="card-link" href="features/file-explorer.html">Deep dive →</a></p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">🖥️</div>
+            <h3>Native desktop shell</h3>
+            <p>Tauri + React with a Slack-inspired dark UI. File reads and workspace state stay in-process — no companion hub or network service.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">🔒</div>
+            <h3>Path-safe I/O</h3>
+            <p>Rust backend normalises paths, rejects <code>..</code> escapes, and serves file trees relative to each workspace root.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">⚡</div>
+            <h3>Preview deep links</h3>
+            <p>Open a specific file via query params (<code>?preview=true&amp;workspace=&amp;path=</code>) for bookmarks or tooling integration.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="screenshot-showcase" aria-labelledby="screenshots-heading">
+      <div class="wrap">
+        <h2 id="screenshots-heading">See the desktop app</h2>
+        <p class="section-intro">Drop screenshots into <code>assets/screenshots/</code> in the repo; the README will link them here once published.</p>
+        <figure class="screenshot-frame screenshot-placeholder" aria-label="Screenshot placeholder">
+          <div class="screenshot-placeholder-inner">
+            <p>Add a screenshot to <code>assets/screenshots/</code> and update this section when ready.</p>
+          </div>
+          <figcaption class="screenshot-caption">Placeholder — capture the app with <code>make start-all</code>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section-alt" aria-labelledby="workflow-heading">
+      <div class="wrap">
+        <h2 id="workflow-heading">How you work in it</h2>
+        <p class="section-intro">Open Dickory Docs, pin your doc folders, and read — the tree and preview stay in sync.</p>
+        <div class="grid-2">
+          <div class="workflow-block">
+            <h3 class="workflow-title">Browse &amp; filter</h3>
+            <ul class="feature-list feature-list--tight">
+              <li>Switch workspaces from tabs in the explorer.</li>
+              <li>Toggle <strong>Markdown only</strong> to hide noise in large repos.</li>
+              <li>Expand folders lazily; selection drives the main pane.</li>
+            </ul>
+          </div>
+          <div class="workflow-block">
+            <h3 class="workflow-title">Read &amp; sketch</h3>
+            <ul class="feature-list feature-list--tight">
+              <li>Markdown renders with GFM-style parsing via <strong>marked</strong>.</li>
+              <li>Mermaid blocks render as SVG; click to expand busy diagrams.</li>
+              <li>Non-<code>.md</code> files open as monospace plain text.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="release-notes-heading">
+      <div class="wrap">
+        <h2 id="release-notes-heading">Release notes</h2>
+        <p class="section-intro">Tagged builds will appear on <a href="https://github.com/camronwood/dickory-docs/releases">GitHub releases</a> when packaging ships.</p>
+        <div class="release-landing-preview">
+          <p class="release-landing-label">Latest</p>
+          <p class="release-landing-version"><strong>v0.1.0</strong> <time datetime="2026-05-15">May 15, 2026</time></p>
+          <p class="release-landing-summary">Initial public branding as <strong>Dickory Docs</strong>, marketing site, workspace config migration from Doc Watson, and the local Markdown/Mermaid viewer you can run with <code>make start-all</code>.</p>
+          <p class="release-landing-actions">
+            <a class="btn btn-primary" href="release-notes.html#v0-1-0">Release notes (v0.1.0)</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="cta-heading">
+      <div class="wrap">
+        <div class="cta-band">
+          <h2 id="cta-heading">Try it from source today</h2>
+          <p>Clone the repo, run <code style="background:var(--bg-deep);padding:0.2em 0.45em;border-radius:6px;font-size:0.9em;">make start-all</code>, and open the desktop. A <strong>full, polished release</strong> is coming — until then, <a href="https://github.com/camronwood/dickory-docs/issues">file issues</a> and <a href="https://github.com/camronwood/dickory-docs/pulls">open a pull request</a> if you improve something.</p>
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">github.com/camronwood/dickory-docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>
+        <a href="https://github.com/camronwood/dickory-docs">Dickory Docs</a>
+        — open source · Under active development
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

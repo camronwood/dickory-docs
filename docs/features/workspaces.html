@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workspaces — Dickory Docs</title>
+  <meta name="description" content="Add folder workspaces, persisted roots, and git metadata in Dickory Docs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/landing.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="../index.html" aria-label="Dickory Docs home">
+        <span class="logo-mark" aria-hidden="true"></span>
+        Dickory Docs
+      </a>
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="index.html">All features</a>
+        <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/blob/main/README.md">README</a>
+        <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap feature-deep" style="padding-top: clamp(2rem, 5vw, 3rem);">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> · <a href="index.html">Features</a> · Workspaces
+    </nav>
+    <header class="feature-deep-hero">
+      <h1>Multi-folder workspaces</h1>
+      <p class="feature-deep-lead">Pin one or more directories on disk. Dickory Docs remembers them between sessions — no cloud account, no hub process.</p>
+    </header>
+
+    <article class="feature-prose">
+      <h2>Add and remove folders</h2>
+      <p>Use the <strong>+</strong> control in the file explorer header to pick a directory via the native folder dialog. Each workspace gets a display name and absolute path. Removing a workspace only drops it from the app list; nothing is deleted on disk.</p>
+
+      <h2>Where state is stored</h2>
+      <p>Workspace records live in <code>workspaces.json</code> under your OS config directory, in a <code>DickoryDocs</code> folder (for example <code>~/Library/Application Support/DickoryDocs/</code> on macOS). If you previously ran Doc Watson, the app copies the legacy <code>DocWatson</code> file once on first launch after the rebrand.</p>
+
+      <h2>Git-aware metadata</h2>
+      <p>When a workspace root is inside a Git repository, the Rust backend records <code>is_git_repo</code>, optional <code>git_remote</code>, and <code>git_branch</code> on the workspace record so you can see context at a glance in the UI.</p>
+
+      <h2>Active workspace</h2>
+      <p>Tabs along the top of the explorer switch the active workspace. The file tree and preview always reflect the selected root; path operations are confined to that root with <code>..</code> rejected.</p>
+
+      <aside class="repo-links">
+        <h2>Read more</h2>
+        <ul>
+          <li><a href="https://github.com/camronwood/dickory-docs#quick-start">README quick start</a></li>
+          <li><a href="markdown-and-mermaid.html">Markdown &amp; Mermaid guide</a></li>
+        </ul>
+      </aside>
+    </article>
+
+    <nav class="feature-nav" aria-labelledby="related-features">
+      <h2 id="related-features">More guides</h2>
+      <div class="feature-nav-grid">
+        <a href="workspaces.html" aria-current="page">Workspaces <span>Roots &amp; persistence</span></a>
+        <a href="markdown-and-mermaid.html">Markdown &amp; Mermaid <span>Preview &amp; diagrams</span></a>
+        <a href="file-explorer.html">File explorer <span>Tree &amp; CRUD</span></a>
+      </div>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href="../index.html">Dickory Docs</a> — <a href="https://github.com/camronwood/dickory-docs">open source</a></p>
+    </div>
+  </footer>
+</body>
+</html>
