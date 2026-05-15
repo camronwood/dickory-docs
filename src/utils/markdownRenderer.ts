@@ -1,5 +1,6 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import GithubSlugger from "github-slugger";
 
 export interface MermaidBlock {
   type: "mermaid";
@@ -185,4 +186,46 @@ export function getContentHash(content: string): string {
     hash = hash & hash;
   }
   return hash.toString(36);
+}
+
+/** GitHub-style slug; collapse runs of hyphens so TOC links like `#tools-ci-local` match. */
+export function slugifyHeading(text: string, slugger: GithubSlugger): string {
+  return slugger.slug(text).replace(/-+/g, "-");
+}
+
+/** Assign `id` on h1–h6 under `root` (call once per preview, after all segments mount). */
+export function assignHeadingIds(root: HTMLElement): void {
+  const slugger = new GithubSlugger();
+  root.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((node) => {
+    const text = node.textContent?.trim() ?? "";
+    if (!text) return;
+    node.id = slugifyHeading(text, slugger);
+  });
+}
+
+export function normalizeHeadingId(hash: string): string {
+  const raw = hash.startsWith("#") ? hash.slice(1) : hash;
+  try {
+    return decodeURIComponent(raw).replace(/-+/g, "-");
+  } catch {
+    return raw.replace(/-+/g, "-");
+  }
+}
+
+/** Scroll a heading into view inside the preview scroll container. */
+export function scrollToHeading(root: HTMLElement, hash: string): boolean {
+  const id = normalizeHeadingId(hash);
+  if (!id) return false;
+
+  const el =
+    root.querySelector<HTMLElement>(`#${CSS.escape(id)}`) ??
+    root.querySelector<HTMLElement>(`[id="${id}"]`);
+
+  if (!el) return false;
+
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (typeof history !== "undefined" && history.replaceState) {
+    history.replaceState(null, "", `#${id}`);
+  }
+  return true;
 }

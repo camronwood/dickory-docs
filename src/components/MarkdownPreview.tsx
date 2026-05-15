@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import {
+  assignHeadingIds,
   extractTitle,
   getContentHash,
   renderMarkdown,
+  scrollToHeading,
   splitMarkdownAndMermaid,
   type MarkdownSegment,
 } from "../utils/markdownRenderer";
 import { renderMermaidSvg } from "../utils/mermaidConfig";
 import { MermaidModal } from "./MermaidModal";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { DocumentSearchBar } from "./DocumentSearchBar";
+import {
+  clearDocumentHighlights,
+  highlightDocumentMatches,
+} from "../utils/documentSearch";
 
 interface MermaidDiagramProps {
   content: string;
@@ -161,10 +168,15 @@ export function MarkdownPreview({
   const [expandedDiagram, setExpandedDiagram] = useState<string | null>(null);
   const [expandedBlockIndex, setExpandedBlockIndex] = useState<number | undefined>();
   const [isRendering] = useState<boolean>(false);
+  const [docSearchOpen, setDocSearchOpen] = useState(false);
+  const [docSearchQuery, setDocSearchQuery] = useState("");
+  const [docSearchActiveIndex, setDocSearchActiveIndex] = useState(0);
+  const [docSearchMatchCount, setDocSearchMatchCount] = useState(0);
 
   const contentHashRef = useRef<string>("");
   const intervalRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const markdownContentRef = useRef<HTMLDivElement>(null);
 
   const filename = filePath.split("/").pop() || "Unknown";
   const embedded = layout === "embedded";
@@ -214,8 +226,16 @@ export function MarkdownPreview({
     contentHashRef.current = "";
     setContent("");
     setSegments([]);
+    setDocSearchOpen(false);
+    setDocSearchQuery("");
+    setDocSearchActiveIndex(0);
+    setDocSearchMatchCount(0);
     fetchContent();
   }, [workspaceRoot, filePath]);
+
+  useEffect(() => {
+    setDocSearchActiveIndex(0);
+  }, [docSearchQuery]);
 
   useEffect(() => {
     intervalRef.current = window.setInterval(() => {
@@ -236,6 +256,57 @@ export function MarkdownPreview({
       document.title = `${title} · Dickory Docs`;
     }
   }, [title, embedded]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        setDocSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const root = markdownContentRef.current;
+    if (!root || segments.length === 0) return;
+
+    assignHeadingIds(root);
+
+    if (docSearchOpen && docSearchQuery.trim()) {
+      const count = highlightDocumentMatches(root, docSearchQuery, docSearchActiveIndex);
+      setDocSearchMatchCount(count);
+      return;
+    }
+
+    clearDocumentHighlights(root);
+    setDocSearchMatchCount(0);
+
+    const hash = window.location.hash;
+    if (hash) {
+      requestAnimationFrame(() => scrollToHeading(root, hash));
+    }
+  }, [segments, content, docSearchOpen, docSearchQuery, docSearchActiveIndex]);
+
+  useEffect(() => {
+    const root = markdownContentRef.current;
+    if (!root) return;
+
+    const onClick = (event: MouseEvent) => {
+      const anchor = (event.target as HTMLElement).closest("a");
+      if (!anchor || !root.contains(anchor)) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href?.startsWith("#")) return;
+
+      event.preventDefault();
+      scrollToHeading(root, href);
+    };
+
+    root.addEventListener("click", onClick);
+    return () => root.removeEventListener("click", onClick);
+  }, [segments, content]);
 
   const handleRefresh = () => {
     setLoading(true);
@@ -342,6 +413,40 @@ export function MarkdownPreview({
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
+          {docSearchOpen ? (
+            <DocumentSearchBar
+              query={docSearchQuery}
+              onQueryChange={setDocSearchQuery}
+              matchCount={docSearchMatchCount}
+              activeIndex={docSearchActiveIndex}
+              onNext={() => {
+                if (docSearchMatchCount > 0) {
+                  setDocSearchActiveIndex((i) => (i + 1) % docSearchMatchCount);
+                }
+              }}
+              onPrevious={() => {
+                if (docSearchMatchCount > 0) {
+                  setDocSearchActiveIndex(
+                    (i) => (i - 1 + docSearchMatchCount) % docSearchMatchCount
+                  );
+                }
+              }}
+              onClose={() => {
+                setDocSearchOpen(false);
+                setDocSearchQuery("");
+                setDocSearchActiveIndex(0);
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDocSearchOpen(true)}
+              className="px-3 py-1 text-xs bg-slack-bg hover:bg-slack-accent text-slack-text hover:text-white rounded border border-slack-border transition-colors"
+              title="Find in document (⌘F / Ctrl+F)"
+            >
+              Find
+            </button>
+          )}
           {lastUpdated && (
             <span className="text-sm text-slack-textMuted hidden sm:inline">
               Updated at {formatTime(lastUpdated)}
@@ -377,7 +482,12 @@ export function MarkdownPreview({
 
       <div className={embedded ? "flex-1 min-h-0 overflow-auto" : "flex-1 overflow-auto"}>
         <div className="max-w-6xl mx-auto p-6">
-          <div className="markdown-content prose prose-invert max-w-none">{renderSegments()}</div>
+          <div
+            ref={markdownContentRef}
+            className="markdown-content prose prose-invert max-w-none"
+          >
+            {renderSegments()}
+          </div>
         </div>
       </div>
 

@@ -113,6 +113,15 @@ input {
   padding-bottom: 0.3em;
 }
 
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  scroll-margin-top: 4.5rem;
+}
+
 .markdown-content h3 {
   font-size: 1.25em;
 }
@@ -144,6 +153,18 @@ input {
 .markdown-content a:hover {
   color: #93c5fd;
   text-decoration-color: #93c5fd;
+}
+
+.doc-search-hit {
+  background-color: rgba(250, 204, 21, 0.35);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.doc-search-hit-active {
+  background-color: rgba(251, 146, 60, 0.55);
+  outline: 1px solid rgba(251, 146, 60, 0.9);
 }
 
 .markdown-content strong {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { FileExplorerPanel } from "./components/FileExplorerPanel";
 import { MarkdownPreview } from "./components/MarkdownPreview";
+import { TextFileView } from "./components/TextFileView";
 import { MermaidGalleryModal } from "./components/MermaidGalleryModal";
 import {
   loadMarkdownOnlyPreference,
@@ -37,29 +38,6 @@ export type OpenGalleryOptions = {
   blockIndex?: number;
   content?: string;
 };
-
-function TextFileView({
-  path,
-  content,
-}: {
-  path: string;
-  content: string;
-}) {
-  const name = path.split("/").pop() || path;
-  return (
-    <div className="flex flex-col flex-1 min-h-0 h-full bg-slack-bg">
-      <div className="flex-shrink-0 bg-slack-bgHover border-b border-slack-border px-4 py-3">
-        <h1 className="font-bold text-slack-text truncate">{name}</h1>
-        <p className="text-sm text-slack-textMuted truncate">{path}</p>
-      </div>
-      <div className="flex-1 min-h-0 overflow-auto p-4">
-        <pre className="text-sm text-slack-text font-mono whitespace-pre-wrap break-words bg-slack-bgHover border border-slack-border rounded p-4">
-          {content}
-        </pre>
-      </div>
-    </div>
-  );
-}
 
 function EmptyViewer() {
   return (

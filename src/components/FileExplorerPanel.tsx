@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { useFileExplorerStore } from "../stores/fileExplorerStore";
 import type { FileNode } from "../stores/fileExplorerStore";
+import { filterTreeByFileName } from "../utils/fileTreeFilter";
 import { open } from "@tauri-apps/api/dialog";
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -121,6 +122,7 @@ export function FileExplorerPanel({
   const [showAddWorkspace, setShowAddWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspacePath, setNewWorkspacePath] = useState("");
+  const [fileNameQuery, setFileNameQuery] = useState("");
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -440,9 +442,29 @@ export function FileExplorerPanel({
     return iconMap[ext || ""] || "📄";
   };
 
+  function highlightFileName(name: string, query: string): ReactNode {
+    const q = query.trim();
+    if (!q) return name;
+    const lower = name.toLowerCase();
+    const idx = lower.indexOf(q.toLowerCase());
+    if (idx === -1) return name;
+    return (
+      <>
+        {name.slice(0, idx)}
+        <span className="bg-amber-500/35 rounded-sm">{name.slice(idx, idx + q.length)}</span>
+        {name.slice(idx + q.length)}
+      </>
+    );
+  }
+
   const renderFileTree = (files: FileNode[], level = 0) => {
+    const nameFilterActive = fileNameQuery.trim().length > 0;
+
     return files.map((file) => {
       const dir = isDirectoryNode(file);
+      const showExpanded =
+        expandedPaths[file.path] || (nameFilterActive && dir && (file.children?.length ?? 0) > 0);
+
       return (
       <div key={file.path}>
         <div
@@ -454,16 +476,18 @@ export function FileExplorerPanel({
           onContextMenu={(e) => handleContextMenu(e, file)}
         >
           <span className="text-sm">
-            {dir ? (expandedPaths[file.path] ? "📂" : "📁") : renderFileIcon(file)}
+            {dir ? (showExpanded ? "📂" : "📁") : renderFileIcon(file)}
           </span>
-          <span className="text-sm truncate flex-1">{file.name}</span>
+          <span className="text-sm truncate flex-1">
+            {highlightFileName(file.name, fileNameQuery)}
+          </span>
           {dir && (
             <span className="text-xs text-slack-textMuted">
-              {expandedPaths[file.path] ? "▼" : "▶"}
+              {showExpanded ? "▼" : "▶"}
             </span>
           )}
         </div>
-        {dir && expandedPaths[file.path] && file.children && (
+        {dir && showExpanded && file.children && (
           <div>{renderFileTree(file.children, level + 1)}</div>
         )}
       </div>
@@ -472,12 +496,14 @@ export function FileExplorerPanel({
   };
 
   const files = activeWorkspaceId ? fileTree[activeWorkspaceId] ?? EMPTY_FILE_LIST : EMPTY_FILE_LIST;
-  const displayedFiles = useMemo(
-    () => (markdownOnly ? filterTreeMarkdownOnly(files) : files),
-    [files, markdownOnly]
-  );
+  const displayedFiles = useMemo(() => {
+    const byType = markdownOnly ? filterTreeMarkdownOnly(files) : files;
+    return filterTreeByFileName(byType, fileNameQuery);
+  }, [files, markdownOnly, fileNameQuery]);
   const filterExcludesEverything =
-    markdownOnly && files.length > 0 && displayedFiles.length === 0;
+    files.length > 0 &&
+    displayedFiles.length === 0 &&
+    (markdownOnly || fileNameQuery.trim().length > 0);
 
   return (
     <div
@@ -589,6 +615,17 @@ export function FileExplorerPanel({
         </div>
       </div>
 
+      <div className="flex-shrink-0 px-4 py-2 border-b border-slack-border bg-slack-bgHover">
+        <input
+          type="search"
+          value={fileNameQuery}
+          onChange={(e) => setFileNameQuery(e.target.value)}
+          placeholder="Filter by file name…"
+          className="w-full px-2 py-1.5 text-xs bg-slack-bg border border-slack-border rounded text-slack-text placeholder:text-slack-textMuted focus:outline-none focus:border-slack-accent"
+          aria-label="Filter files by name"
+        />
+      </div>
+
       {/* Markdown-only filter: keeps tree visible (no full-panel swap) when expanding dirs */}
       <div className="flex-shrink-0 px-4 py-2 border-b border-slack-border bg-slack-bgHover">
         <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slack-text">
@@ -631,15 +668,29 @@ export function FileExplorerPanel({
           </div>
         ) : filterExcludesEverything ? (
           <div className="p-4 text-center">
-            <div className="text-4xl mb-2">📝</div>
-            <div className="text-sm text-slack-textMuted">No Markdown files in this workspace</div>
-            <button
-              type="button"
-              onClick={() => onMarkdownOnlyChange(false)}
-              className="mt-3 text-xs text-slack-accent hover:underline"
-            >
-              Show all files
-            </button>
+            <div className="text-4xl mb-2">{fileNameQuery.trim() ? "🔍" : "📝"}</div>
+            <div className="text-sm text-slack-textMuted">
+              {fileNameQuery.trim()
+                ? "No files match that name in loaded folders"
+                : "No Markdown files in this workspace"}
+            </div>
+            {fileNameQuery.trim() ? (
+              <button
+                type="button"
+                onClick={() => setFileNameQuery("")}
+                className="mt-3 text-xs text-slack-accent hover:underline"
+              >
+                Clear name filter
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onMarkdownOnlyChange(false)}
+                className="mt-3 text-xs text-slack-accent hover:underline"
+              >
+                Show all files
+              </button>
+            )}
           </div>
         ) : (
           <div className="py-2">{renderFileTree(displayedFiles)}</div>
