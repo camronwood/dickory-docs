@@ -40,8 +40,8 @@
       <h2>Tree navigation</h2>
       <p>Directories load children on expand. Click a file to open it: Markdown routes to the preview pane; other extensions open as plain text in a monospace view.</p>
 
-      <h2>Filter by file name</h2>
-      <p>Type in the sidebar search box to narrow the tree to files and folders whose <strong>names</strong> match (case-insensitive). Matching folders auto-expand; name hits are highlighted. Search applies to <strong>loaded</strong> directories — expand parents to search deeper subtrees.</p>
+      <h2>Search file names in workspace</h2>
+      <p>Type in the sidebar search box to find files and folders anywhere in the active workspace (case-insensitive). Results show the parent path under each name. The walk skips common noise directories (<code>.git</code>, <code>node_modules</code>, <code>target</code>, etc.). Up to 500 matches are returned — refine your query if you hit that cap.</p>
 
       <h2>Markdown-only filter</h2>
       <p>Toggle <strong>Markdown only</strong> to hide non-<code>.md</code> files and prune empty folders after filtering. Works together with the file name filter. The preference persists in <code>localStorage</code> (with fallback for the legacy Doc Watson key).</p>

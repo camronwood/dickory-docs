@@ -33,7 +33,7 @@ function toDirRelativePath(path: string): string {
 }
 
 /** Coerce JSON into strict booleans so tree merge + markdown filter stay consistent. */
-function normalizeFetchedNodes(nodes: FileNode[]): FileNode[] {
+export function normalizeFetchedNodes(nodes: FileNode[]): FileNode[] {
   return nodes.map((node) => {
     const n = node as FileNode & { isDir?: boolean };
     const isDir = node.is_dir === true || n.isDir === true;

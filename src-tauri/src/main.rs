@@ -363,6 +363,79 @@ fn workspace_scan_mermaid(root: String) -> Result<Vec<MermaidBlockOut>, String> 
     Ok(blocks)
 }
 
+const MAX_FILE_SEARCH_RESULTS: usize = 500;
+
+fn is_markdown_name(name: &str) -> bool {
+    let n = name.to_ascii_lowercase();
+    n.ends_with(".md") || n.ends_with(".markdown")
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct FileSearchResult {
+    pub results: Vec<FileNodeOut>,
+    pub truncated: bool,
+}
+
+/// Walk the full workspace and return entries whose file or folder name contains `query`.
+#[tauri::command]
+fn workspace_search_files(
+    root: String,
+    query: String,
+    markdown_only: bool,
+) -> Result<FileSearchResult, String> {
+    let q = query.trim().to_ascii_lowercase();
+    if q.is_empty() {
+        return Ok(FileSearchResult {
+            results: vec![],
+            truncated: false,
+        });
+    }
+
+    let root_pb = root_path_buf(&root)?;
+    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+    let mut out: Vec<FileNodeOut> = Vec::new();
+
+    for entry in WalkDir::new(&root_canon)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(|e| {
+            if e.file_type().is_dir() {
+                let name = e.file_name().to_string_lossy();
+                return !should_skip_dir(&name);
+            }
+            true
+        })
+    {
+        if out.len() >= MAX_FILE_SEARCH_RESULTS {
+            break;
+        }
+        let entry = entry.map_err(|e| e.to_string())?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.to_ascii_lowercase().contains(&q) {
+            continue;
+        }
+        let is_dir = entry.file_type().is_dir();
+        if markdown_only && !is_markdown_name(&name) {
+            continue;
+        }
+        let full = entry.path();
+        let meta = entry.metadata().map_err(|e| e.to_string())?;
+        let path_rel = rel_path_from_root(&root_canon, full)?;
+        out.push(FileNodeOut {
+            name,
+            is_dir,
+            size: if is_dir { 0 } else { meta.len() },
+            mod_time: iso_mtime(&meta),
+            path: path_rel,
+        });
+    }
+
+    out.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+    let truncated = out.len() >= MAX_FILE_SEARCH_RESULTS;
+    Ok(FileSearchResult { results: out, truncated })
+}
+
 #[tauri::command]
 fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
     let root_pb = root_path_buf(&root)?;
@@ -390,6 +463,7 @@ fn main() {
             rename_entry,
             delete_entry,
             workspace_scan_mermaid,
+            workspace_search_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

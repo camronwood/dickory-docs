@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
-import { useFileExplorerStore } from "../stores/fileExplorerStore";
+import { useFileExplorerStore, normalizeFetchedNodes } from "../stores/fileExplorerStore";
 import type { FileNode } from "../stores/fileExplorerStore";
-import { filterTreeByFileName } from "../utils/fileTreeFilter";
+import { formatSearchResultPath } from "../utils/workspaceFileSearch";
 import { open } from "@tauri-apps/api/dialog";
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -123,6 +123,9 @@ export function FileExplorerPanel({
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspacePath, setNewWorkspacePath] = useState("");
   const [fileNameQuery, setFileNameQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FileNode[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchTruncated, setSearchTruncated] = useState(false);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -140,6 +143,49 @@ export function FileExplorerPanel({
       loadFiles(activeWorkspaceId);
     }
   }, [activeWorkspaceId, loadFiles]);
+
+  useEffect(() => {
+    const query = fileNameQuery.trim();
+    if (!query || !activeWorkspaceId) {
+      setSearchResults([]);
+      setSearchTruncated(false);
+      setSearchLoading(false);
+      return;
+    }
+
+    const workspace = workspaces.find((w) => w.id === activeWorkspaceId);
+    if (!workspace) return;
+
+    setSearchLoading(true);
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await invoke<{ results: FileNode[]; truncated: boolean }>(
+            "workspace_search_files",
+            {
+              root: workspace.path,
+              query,
+              markdownOnly,
+            }
+          );
+          setSearchResults(normalizeFetchedNodes(response.results));
+          setSearchTruncated(response.truncated);
+        } catch (err) {
+          console.error("Workspace file search failed:", err);
+          setSearchResults([]);
+          setSearchTruncated(false);
+          setBanner({
+            type: "err",
+            text: err instanceof Error ? err.message : "File search failed",
+          });
+        } finally {
+          setSearchLoading(false);
+        }
+      })();
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [fileNameQuery, activeWorkspaceId, markdownOnly, workspaces]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -457,13 +503,46 @@ export function FileExplorerPanel({
     );
   }
 
-  const renderFileTree = (files: FileNode[], level = 0) => {
-    const nameFilterActive = fileNameQuery.trim().length > 0;
+  const renderSearchResults = (results: FileNode[]) =>
+    results.map((file) => {
+      const dir = isDirectoryNode(file);
+      const parentDir = formatSearchResultPath(file.path);
 
+      return (
+        <div key={file.path}>
+          <div
+            className={`flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-slack-bgHover rounded ${
+              selectedPath === file.path ? "bg-slack-accent text-white" : "text-slack-text"
+            }`}
+            onClick={() => handleFileClick(file)}
+            onContextMenu={(e) => handleContextMenu(e, file)}
+          >
+            <span className="text-sm flex-shrink-0">
+              {dir ? "📁" : renderFileIcon(file)}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-sm block truncate">
+                {highlightFileName(file.name, fileNameQuery)}
+              </span>
+              {parentDir && (
+                <span
+                  className={`text-xs block truncate ${
+                    selectedPath === file.path ? "text-white/80" : "text-slack-textMuted"
+                  }`}
+                >
+                  {parentDir}
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+      );
+    });
+
+  const renderFileTree = (files: FileNode[], level = 0) => {
     return files.map((file) => {
       const dir = isDirectoryNode(file);
-      const showExpanded =
-        expandedPaths[file.path] || (nameFilterActive && dir && (file.children?.length ?? 0) > 0);
+      const showExpanded = expandedPaths[file.path];
 
       return (
       <div key={file.path}>
@@ -478,9 +557,7 @@ export function FileExplorerPanel({
           <span className="text-sm">
             {dir ? (showExpanded ? "📂" : "📁") : renderFileIcon(file)}
           </span>
-          <span className="text-sm truncate flex-1">
-            {highlightFileName(file.name, fileNameQuery)}
-          </span>
+          <span className="text-sm truncate flex-1">{file.name}</span>
           {dir && (
             <span className="text-xs text-slack-textMuted">
               {showExpanded ? "▼" : "▶"}
@@ -496,14 +573,15 @@ export function FileExplorerPanel({
   };
 
   const files = activeWorkspaceId ? fileTree[activeWorkspaceId] ?? EMPTY_FILE_LIST : EMPTY_FILE_LIST;
-  const displayedFiles = useMemo(() => {
-    const byType = markdownOnly ? filterTreeMarkdownOnly(files) : files;
-    return filterTreeByFileName(byType, fileNameQuery);
-  }, [files, markdownOnly, fileNameQuery]);
-  const filterExcludesEverything =
-    files.length > 0 &&
-    displayedFiles.length === 0 &&
-    (markdownOnly || fileNameQuery.trim().length > 0);
+  const nameQuery = fileNameQuery.trim();
+  const isWorkspaceSearch = nameQuery.length > 0;
+  const displayedFiles = useMemo(
+    () => (markdownOnly ? filterTreeMarkdownOnly(files) : files),
+    [files, markdownOnly]
+  );
+  const filterExcludesEverything = isWorkspaceSearch
+    ? !searchLoading && searchResults.length === 0
+    : files.length > 0 && markdownOnly && displayedFiles.length === 0;
 
   return (
     <div
@@ -620,9 +698,9 @@ export function FileExplorerPanel({
           type="search"
           value={fileNameQuery}
           onChange={(e) => setFileNameQuery(e.target.value)}
-          placeholder="Filter by file name…"
+          placeholder="Search file names in workspace…"
           className="w-full px-2 py-1.5 text-xs bg-slack-bg border border-slack-border rounded text-slack-text placeholder:text-slack-textMuted focus:outline-none focus:border-slack-accent"
-          aria-label="Filter files by name"
+          aria-label="Search file names in workspace"
         />
       </div>
 
@@ -654,33 +732,40 @@ export function FileExplorerPanel({
               Dismiss
             </button>
           </div>
-        ) : loadingFiles ? (
+        ) : isWorkspaceSearch && searchLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="flex items-center gap-2 text-slack-textMuted">
+              <div className="w-4 h-4 border border-slack-textMuted border-t-transparent rounded-full animate-spin" />
+              Searching workspace…
+            </div>
+          </div>
+        ) : loadingFiles && !isWorkspaceSearch ? (
           <div className="flex items-center justify-center h-32">
             <div className="flex items-center gap-2 text-slack-textMuted">
               <div className="w-4 h-4 border border-slack-textMuted border-t-transparent rounded-full animate-spin" />
               Loading files...
             </div>
           </div>
-        ) : files.length === 0 ? (
+        ) : !isWorkspaceSearch && files.length === 0 ? (
           <div className="p-4 text-center">
             <div className="text-4xl mb-2">📁</div>
             <div className="text-sm text-slack-textMuted">No files found</div>
           </div>
         ) : filterExcludesEverything ? (
           <div className="p-4 text-center">
-            <div className="text-4xl mb-2">{fileNameQuery.trim() ? "🔍" : "📝"}</div>
+            <div className="text-4xl mb-2">{isWorkspaceSearch ? "🔍" : "📝"}</div>
             <div className="text-sm text-slack-textMuted">
-              {fileNameQuery.trim()
-                ? "No files match that name in loaded folders"
+              {isWorkspaceSearch
+                ? "No files match that name in this workspace"
                 : "No Markdown files in this workspace"}
             </div>
-            {fileNameQuery.trim() ? (
+            {isWorkspaceSearch ? (
               <button
                 type="button"
                 onClick={() => setFileNameQuery("")}
                 className="mt-3 text-xs text-slack-accent hover:underline"
               >
-                Clear name filter
+                Clear search
               </button>
             ) : (
               <button
@@ -691,6 +776,15 @@ export function FileExplorerPanel({
                 Show all files
               </button>
             )}
+          </div>
+        ) : isWorkspaceSearch ? (
+          <div className="py-2">
+            {searchTruncated && (
+              <p className="px-3 pb-2 text-xs text-slack-textMuted">
+                Showing first 500 matches — refine your search if needed.
+              </p>
+            )}
+            {renderSearchResults(searchResults)}
           </div>
         ) : (
           <div className="py-2">{renderFileTree(displayedFiles)}</div>
