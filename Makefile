@@ -1,4 +1,4 @@
-.PHONY: help start-all
+.PHONY: help start-all build-release
 
 help: ## Show available targets
 	@echo "Dickory Docs"
@@ -7,3 +7,6 @@ help: ## Show available targets
 
 start-all: ## Start Dickory Docs Tauri dev (Vite on port 5177)
 	@bash "$(CURDIR)/scripts/start-all.sh"
+
+build-release: ## Build installable .app / .dmg (macOS, release)
+	npm run tauri:build

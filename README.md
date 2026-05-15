@@ -21,12 +21,17 @@ make start-all
 
 Vite dev server runs on port **5177**; Tauri opens the desktop window.
 
-**Build:**
+**Install (download):** [GitHub Releases](https://github.com/camronwood/dickory-docs/releases) — pick the `.dmg` (macOS), `.msi` (Windows), or `.AppImage` / `.deb` (Linux) for your machine. macOS builds are unsigned; use **Right-click → Open** the first time if Gatekeeper warns.
+
+**Build installers locally:**
 
 ```bash
-npm run build
+npm install
 npm run tauri:build
+# Output: src-tauri/target/release/bundle/  (.dmg on macOS, .msi on Windows, etc.)
 ```
+
+Or: `make build-release` on macOS after [Tauri prerequisites](https://v1.tauri.app/v1/guides/getting-started/prerequisites/) are installed.
 
 ## Why Mermaid first
 
