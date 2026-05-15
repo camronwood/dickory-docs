@@ -1,10 +1,12 @@
 # Dickory Docs
 
-> Your docs, on the clock. Read Markdown where it lives.
+> **A Mermaid diagram viewer that actually works** — for Markdown on your machine.
 
-Local-first desktop app for **Markdown preview**, **Mermaid diagrams**, and **multi-folder workspaces** — no cloud hub, no separate server.
+Dickory Docs was built because nothing else made it easy to **view Mermaid diagrams** in local Markdown: no paste into a web playground, no broken renders in generic previewers. Open a folder, pick a `.md` file, and every fenced `mermaid` block becomes **live SVG** — inline or full-screen.
 
-**Site:** [camronwood.github.io/dickory-docs](https://camronwood.github.io/dickory-docs/) (enable GitHub Pages from the `/docs` folder after push)
+Also includes Markdown preview, multi-folder workspaces, and a file explorer — all local-first (Tauri + React + Rust).
+
+**Site:** [camronwood.github.io/dickory-docs](https://camronwood.github.io/dickory-docs/)
 
 ## Quick start
 
@@ -26,23 +28,30 @@ npm run build
 npm run tauri:build
 ```
 
-## What it does
+## Why Mermaid first
 
-- Add **folder workspaces** — persisted under `DickoryDocs` in your OS config dir (migrates from legacy `DocWatson` once).
-- **Markdown preview** with sanitised HTML and title in the window chrome.
-- **Mermaid** fenced blocks render inline; click to expand in a modal.
-- **File explorer** — resizable sidebar, markdown-only filter, create/rename/delete, plain-text view for other files.
+- **Inline SVG** — fenced `mermaid` blocks render in the preview pane, not as raw code.
+- **Expand to modal** — dense flowcharts and sequence diagrams get a full-screen view.
+- **Retry on errors** — bad syntax surfaces clearly instead of failing silently.
+- **Local files** — diagrams never leave your machine; point at any folder on disk.
+
+## Also included
+
+- **Folder workspaces** — persisted under `DickoryDocs` in your OS config dir (migrates from legacy `DocWatson` once).
+- **Markdown preview** — sanitised HTML, title in the window chrome.
+- **File explorer** — resizable sidebar, markdown-only filter, create/rename/delete.
 - **Preview deep link:** `?preview=true&workspace={id}&path={relativePath}`
 
 ## Stack
 
 - **Desktop:** Tauri 1.x + React + TypeScript + Tailwind
+- **Diagrams:** Mermaid 11
+- **Markdown:** marked, DOMPurify
 - **Backend:** Rust (workspace JSON, directory walks, safe path I/O)
-- **Markdown:** marked, DOMPurify, Mermaid 11
 
 ## Screenshots
 
-Add images to [`assets/screenshots/`](assets/screenshots/) and link them from the [marketing site](docs/index.html) when ready.
+Add images to [`assets/screenshots/`](assets/screenshots/) — ideally a doc with **multiple rendered Mermaid diagrams**.
 
 ## Docs
 

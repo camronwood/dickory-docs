@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dickory Docs — Local Markdown and Mermaid viewer</title>
-  <meta name="description" content="Dickory Docs — native desktop app for local Markdown preview, Mermaid diagrams, multi-folder workspaces, and a resizable file explorer. No cloud hub required." />
-  <meta property="og:title" content="Dickory Docs — Local Markdown and Mermaid viewer" />
-  <meta property="og:description" content="Browse folders on disk, preview Markdown with live Mermaid, and keep docs in sync with your repos — open source, early access." />
+  <title>Dickory Docs — A Mermaid diagram viewer that actually works</title>
+  <meta name="description" content="Dickory Docs — native desktop app built for viewing Mermaid diagrams in local Markdown: inline SVG, full-screen expand, multi-folder workspaces. No paste-into-a-website required." />
+  <meta property="og:title" content="Dickory Docs — A Mermaid diagram viewer that actually works" />
+  <meta property="og:description" content="Couldn't find a good Mermaid viewer? Open your repo, render fenced blocks as SVG, expand complex diagrams — local-first, open source." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -41,47 +41,78 @@
   <main id="main">
     <section class="hero">
       <div class="wrap">
-        <p class="hero-badge">Open source · Local-first · Early access</p>
-        <h1>Your docs, on the clock.<br />Read Markdown where it lives.</h1>
+        <p class="hero-badge">Built for Mermaid · Local-first · Open source</p>
+        <h1>Finally, a Mermaid viewer<br />that just works.</h1>
         <p class="hero-lead">
-          <strong>Dickory Docs</strong> is a native desktop app for <strong>local Markdown</strong> and <strong>Mermaid</strong> — add folder workspaces, browse the tree, and preview rendered docs without a separate server or cloud sync.
+          <strong>Dickory Docs</strong> exists because good <strong>Mermaid diagram viewers</strong> are hard to find. Point it at folders on disk, open any <code>.md</code> file, and every <code>```mermaid</code> block renders as <strong>live SVG</strong> — inline in the doc, or full-screen when the diagram deserves the room.
         </p>
         <div class="hero-cta">
-          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">Clone &amp; try the code</a>
+          <a class="btn btn-primary" href="features/markdown-and-mermaid.html">Why Mermaid wins here</a>
+          <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs">Clone &amp; try the code</a>
           <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs#quick-start">Quick start</a>
-          <a class="btn btn-ghost" href="features/index.html">Feature guides</a>
-          <a class="btn btn-ghost" href="release-notes.html">Release notes</a>
         </div>
-        <p class="hero-meta">Tauri · React · Rust · Marked · Mermaid</p>
+        <p class="hero-meta">Mermaid 11 · marked · Tauri · React · Rust</p>
+      </div>
+    </section>
+
+    <section class="latest-feature" id="why-mermaid" aria-labelledby="why-mermaid-heading">
+      <div class="wrap latest-feature-inner">
+        <div class="latest-feature-copy">
+          <p class="latest-feature-kicker">The reason this app exists</p>
+          <h2 id="why-mermaid-heading">You shouldn't need a hack to see your diagrams</h2>
+          <p class="latest-feature-lead">Most tools either skip Mermaid, render it wrong, or make you paste into a browser tab. Dickory Docs treats diagrams as first-class: open the Markdown file from your repo, and <strong>sequence, flow, ER, and architecture charts</strong> show up where the author put them — not as raw code fences.</p>
+          <ul class="feature-list feature-list--tight latest-feature-list">
+            <li><strong>Inline SVG</strong> — every fenced <code>mermaid</code> block renders in the preview pane.</li>
+            <li><strong>Expand to modal</strong> — dense diagrams get a dedicated full-screen view with one click.</li>
+            <li><strong>Retry on failure</strong> — syntax errors surface clearly instead of failing silently.</li>
+            <li><strong>Local files</strong> — no upload step; your diagrams never leave the machine.</li>
+          </ul>
+          <div class="latest-feature-actions">
+            <a class="btn btn-primary" href="features/markdown-and-mermaid.html">Mermaid deep dive</a>
+            <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/issues">Request diagram features</a>
+          </div>
+        </div>
+        <aside class="latest-feature-aside" aria-label="Also included">
+          <p class="latest-feature-aside-label">Everything around the viewer</p>
+          <p class="latest-feature-aside-title">Markdown preview + repo folders</p>
+          <p class="latest-feature-aside-text">Mermaid lives inside real docs. Add <strong>workspaces</strong> for your doc trees, filter to <strong>Markdown only</strong>, and use the explorer when you need to create or rename files — but the win is seeing diagrams without friction.</p>
+          <a class="btn btn-ghost btn-sm" href="features/workspaces.html">Workspaces guide →</a>
+        </aside>
       </div>
     </section>
 
     <div class="stack-strip">
       <div class="wrap stack-inner">
-        <span><strong>Workspaces</strong> multiple folders on disk</span>
+        <span><strong>Mermaid</strong> inline SVG + expand</span>
         <span aria-hidden="true">·</span>
-        <span><strong>Preview</strong> Markdown + Mermaid inline</span>
+        <span><strong>Markdown</strong> rendered preview</span>
         <span aria-hidden="true">·</span>
-        <span><strong>Explorer</strong> create, rename, delete</span>
+        <span><strong>Workspaces</strong> folders on disk</span>
       </div>
     </div>
 
     <section class="section-alt" aria-labelledby="capabilities-heading">
       <div class="wrap">
         <h2 id="capabilities-heading">What you get</h2>
-        <p class="section-intro">A focused doc viewer for repos and notes — not an IDE, not a chat hub. Everything runs on your machine.</p>
+        <p class="section-intro">A <strong>Mermaid-first</strong> viewer wrapped in Markdown preview and local folders — not an IDE, not a paste-into-a-website tool. Everything runs on your machine.</p>
         <div class="grid-3 highlights-grid">
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">◇</div>
+            <h3>Mermaid diagram viewer</h3>
+            <p>The headline feature: fenced <code>mermaid</code> blocks become SVG in your preview. Expand busy flowcharts and sequence diagrams to a modal — built because existing viewers weren’t good enough.</p>
+            <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Deep dive →</a></p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">📝</div>
+            <h3>Markdown preview</h3>
+            <p>Rendered HTML with sanitisation and title extraction — the canvas your diagrams live in, not an afterthought.</p>
+            <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Rendering details →</a></p>
+          </article>
           <article class="card">
             <div class="card-icon" aria-hidden="true">📁</div>
             <h3>Multi-folder workspaces</h3>
             <p>Add directories as workspaces; roots and metadata persist under your OS config dir. Git branch and remote show when the folder is a repo.</p>
             <p class="card-cta"><a class="card-link" href="features/workspaces.html">Deep dive →</a></p>
-          </article>
-          <article class="card">
-            <div class="card-icon" aria-hidden="true">📝</div>
-            <h3>Markdown &amp; Mermaid</h3>
-            <p>Rendered preview with sanitised HTML, title extraction, and inline Mermaid diagrams you can expand to a modal for complex charts.</p>
-            <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Deep dive →</a></p>
           </article>
           <article class="card">
             <div class="card-icon" aria-hidden="true">🌲</div>
@@ -110,8 +141,8 @@
 
     <section class="screenshot-showcase" aria-labelledby="screenshots-heading">
       <div class="wrap">
-        <h2 id="screenshots-heading">See the desktop app</h2>
-        <p class="section-intro">Drop screenshots into <code>assets/screenshots/</code> in the repo; the README will link them here once published.</p>
+        <h2 id="screenshots-heading">See Mermaid in the app</h2>
+        <p class="section-intro">Best screenshot: a doc with multiple rendered diagrams (flow + sequence). Drop images into <code>assets/screenshots/</code> in the repo.</p>
         <figure class="screenshot-frame screenshot-placeholder" aria-label="Screenshot placeholder">
           <div class="screenshot-placeholder-inner">
             <p>Add a screenshot to <code>assets/screenshots/</code> and update this section when ready.</p>
@@ -123,23 +154,23 @@
 
     <section class="section-alt" aria-labelledby="workflow-heading">
       <div class="wrap">
-        <h2 id="workflow-heading">How you work in it</h2>
-        <p class="section-intro">Open Dickory Docs, pin your doc folders, and read — the tree and preview stay in sync.</p>
+        <h2 id="workflow-heading">How you view diagrams</h2>
+        <p class="section-intro">Three steps from repo to rendered Mermaid — no export, no online editor.</p>
         <div class="grid-2">
           <div class="workflow-block">
-            <h3 class="workflow-title">Browse &amp; filter</h3>
+            <h3 class="workflow-title">1. Open your doc folder</h3>
             <ul class="feature-list feature-list--tight">
-              <li>Switch workspaces from tabs in the explorer.</li>
-              <li>Toggle <strong>Markdown only</strong> to hide noise in large repos.</li>
-              <li>Expand folders lazily; selection drives the main pane.</li>
+              <li>Add a <strong>workspace</strong> pointing at the repo or docs tree.</li>
+              <li>Toggle <strong>Markdown only</strong> to jump straight to <code>.md</code> files.</li>
+              <li>Pick the file that contains your diagrams.</li>
             </ul>
           </div>
           <div class="workflow-block">
-            <h3 class="workflow-title">Read &amp; sketch</h3>
+            <h3 class="workflow-title">2. See Mermaid as graphics</h3>
             <ul class="feature-list feature-list--tight">
-              <li>Markdown renders with GFM-style parsing via <strong>marked</strong>.</li>
-              <li>Mermaid blocks render as SVG; click to expand busy diagrams.</li>
-              <li>Non-<code>.md</code> files open as monospace plain text.</li>
+              <li>Every <code>```mermaid</code> fence renders as <strong>SVG</strong> in the preview.</li>
+              <li>Click a diagram to <strong>expand</strong> it when labels are too small inline.</li>
+              <li>Surrounding Markdown still renders — context stays with the chart.</li>
             </ul>
           </div>
         </div>
@@ -153,7 +184,7 @@
         <div class="release-landing-preview">
           <p class="release-landing-label">Latest</p>
           <p class="release-landing-version"><strong>v0.1.0</strong> <time datetime="2026-05-15">May 15, 2026</time></p>
-          <p class="release-landing-summary">Initial public branding as <strong>Dickory Docs</strong>, marketing site, workspace config migration from Doc Watson, and the local Markdown/Mermaid viewer you can run with <code>make start-all</code>.</p>
+          <p class="release-landing-summary">Initial <strong>Dickory Docs</strong> release — a local <strong>Mermaid diagram viewer</strong> for Markdown on disk, with expand-to-modal, workspaces, and marketing site. Run with <code>make start-all</code>.</p>
           <p class="release-landing-actions">
             <a class="btn btn-primary" href="release-notes.html#v0-1-0">Release notes (v0.1.0)</a>
           </p>

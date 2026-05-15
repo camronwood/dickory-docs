@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Markdown &amp; Mermaid — Dickory Docs</title>
-  <meta name="description" content="Markdown preview, Mermaid diagrams, and preview deep links in Dickory Docs." />
+  <title>Mermaid diagram viewer — Dickory Docs</title>
+  <meta name="description" content="Why Dickory Docs exists: local Mermaid diagram viewing in Markdown — inline SVG, expand to modal, no upload required." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -27,37 +27,46 @@
 
   <main id="main" class="wrap feature-deep" style="padding-top: clamp(2rem, 5vw, 3rem);">
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="../index.html">Home</a> · <a href="index.html">Features</a> · Markdown &amp; Mermaid
+      <a href="../index.html">Home</a> · <a href="index.html">Features</a> · Mermaid viewer
     </nav>
     <header class="feature-deep-hero">
-      <h1>Markdown &amp; Mermaid preview</h1>
-      <p class="feature-deep-lead">Select a <code>.md</code> file and read rendered HTML in the main pane — with fenced Mermaid blocks turned into SVG diagrams.</p>
+      <h1>The Mermaid diagram viewer</h1>
+      <p class="feature-deep-lead">Dickory Docs was created because <strong>good Mermaid viewers are rare</strong>. This is the core product: open Markdown from disk and see every diagram as graphics — not fences you have to mentally parse.</p>
     </header>
 
     <article class="feature-prose">
-      <h2>Rendering pipeline</h2>
-      <p>The frontend reads file bytes through Tauri commands, parses Markdown with <strong>marked</strong>, sanitises HTML with <strong>DOMPurify</strong>, and injects the result into the preview pane. The window title updates to <code>{heading} · Dickory Docs</code> when a title can be extracted from the document.</p>
+      <h2>What was missing elsewhere</h2>
+      <p>Typical Markdown previewers ignore Mermaid, render it inconsistently, or push you to paste code into a separate website. Architecture docs, RFCs, and READMEs increasingly embed <code>```mermaid</code> blocks — you deserve a desktop app that treats them as first-class output.</p>
 
-      <h2>Mermaid diagrams</h2>
-      <p>Fenced <code>```mermaid</code> blocks are split out and rendered separately via the Mermaid library. Each diagram shows inline in the preview; click to open a modal for large or detailed charts. Failed renders surface an error state with retry.</p>
+      <h2>How Dickory Docs renders diagrams</h2>
+      <p>When you open a <code>.md</code> file, the app:</p>
+      <ol>
+        <li>Parses Markdown with <strong>marked</strong> and splits out fenced <code>mermaid</code> segments.</li>
+        <li>Renders each block to <strong>SVG</strong> via <strong>Mermaid 11</strong> in the preview pane.</li>
+        <li>Lets you <strong>click to expand</strong> any diagram into a modal when inline size is too cramped.</li>
+        <li>Shows a clear <strong>error + retry</strong> if syntax is invalid — no silent blank boxes.</li>
+      </ol>
+      <p>Surrounding prose still renders as HTML (sanitised with <strong>DOMPurify</strong>) so sequence charts stay next to the paragraphs that describe them.</p>
 
-      <h2>Content hashing</h2>
-      <p>The preview tracks a content hash so it can avoid redundant re-renders when the underlying file has not changed.</p>
+      <h2>Diagram types you can view</h2>
+      <p>Anything Mermaid supports in your version — commonly <strong>flowcharts</strong>, <strong>sequence diagrams</strong>, <strong>class/ER diagrams</strong>, <strong>state machines</strong>, <strong>Gantt</strong> charts, and more. If it renders in Mermaid, Dickory Docs will attempt it from your fenced block.</p>
+
+      <h2>Markdown preview (the wrapper)</h2>
+      <p>Mermaid lives inside real documents. The preview pane also extracts a document title for the window chrome (<code>{title} · Dickory Docs</code>) and tracks a content hash to skip redundant re-renders when the file has not changed.</p>
 
       <h2>Preview deep links</h2>
-      <p>For automation or bookmarks, load the app with query parameters:</p>
+      <p>Jump straight to a diagram-bearing file with query parameters:</p>
       <ul>
         <li><code>preview=true</code></li>
         <li><code>workspace={workspaceId}</code></li>
         <li><code>path={relativePath}</code></li>
       </ul>
-      <p>On mount, the app selects that Markdown file automatically when all three are present.</p>
 
       <aside class="repo-links">
-        <h2>Related</h2>
+        <h2>Supporting guides</h2>
         <ul>
-          <li><a href="workspaces.html">Workspaces guide</a></li>
-          <li><a href="file-explorer.html">File explorer guide</a></li>
+          <li><a href="workspaces.html">Workspaces</a> — point the viewer at your doc folders.</li>
+          <li><a href="file-explorer.html">File explorer</a> — find <code>.md</code> files quickly (markdown-only filter).</li>
         </ul>
       </aside>
     </article>
@@ -65,8 +74,8 @@
     <nav class="feature-nav" aria-labelledby="related-features">
       <h2 id="related-features">More guides</h2>
       <div class="feature-nav-grid">
+        <a href="markdown-and-mermaid.html" aria-current="page">Mermaid viewer <span>Core product</span></a>
         <a href="workspaces.html">Workspaces</a>
-        <a href="markdown-and-mermaid.html" aria-current="page">Markdown &amp; Mermaid</a>
         <a href="file-explorer.html">File explorer</a>
       </div>
     </nav>
