@@ -538,11 +538,13 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "dirs",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "uuid",
+ "walkdir",
 ]
 
 [[package]]

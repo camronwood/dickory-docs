@@ -103,8 +103,41 @@ export type MarkdownSegment =
   | { type: "markdown"; content: string }
   | { type: "mermaid"; content: string };
 
+/** Matches ```mermaid fences — keep in sync with Rust `extract_mermaid_blocks_from_markdown`. */
+export const MERMAID_FENCE_REGEX = /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi;
+
+export type MermaidBlockRef = {
+  filePath: string;
+  blockIndex: number;
+  content: string;
+};
+
+export function extractMermaidBlocks(
+  raw: string,
+  filePath: string
+): MermaidBlockRef[] {
+  const blocks: MermaidBlockRef[] = [];
+  const re = new RegExp(MERMAID_FENCE_REGEX.source, MERMAID_FENCE_REGEX.flags);
+  let match: RegExpExecArray | null;
+  let blockIndex = 0;
+
+  while ((match = re.exec(raw)) !== null) {
+    const mermaidContent = match[2].trim();
+    if (mermaidContent.length > 0) {
+      blocks.push({
+        filePath,
+        blockIndex,
+        content: mermaidContent,
+      });
+      blockIndex += 1;
+    }
+  }
+
+  return blocks;
+}
+
 export function splitMarkdownAndMermaid(raw: string): MarkdownSegment[] {
-  const mermaidRegex = /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi;
+  const mermaidRegex = new RegExp(MERMAID_FENCE_REGEX.source, MERMAID_FENCE_REGEX.flags);
   const segments: MarkdownSegment[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;

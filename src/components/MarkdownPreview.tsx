@@ -13,10 +13,12 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 interface MermaidDiagramProps {
   content: string;
+  blockIndex: number;
   onExpand: (content: string) => void;
+  onOpenGallery?: (opts: OpenGalleryFromPreviewOptions) => void;
 }
 
-function MermaidDiagram({ content, onExpand }: MermaidDiagramProps) {
+function MermaidDiagram({ content, blockIndex, onExpand, onOpenGallery }: MermaidDiagramProps) {
   const svgTargetRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
   const [isRendering, setIsRendering] = useState(false);
@@ -94,11 +96,25 @@ function MermaidDiagram({ content, onExpand }: MermaidDiagramProps) {
       ) : (
         <div
           className="w-full min-h-[200px] p-6 bg-slack-bgHover rounded border border-slack-border overflow-x-auto overflow-y-visible cursor-pointer hover:bg-slack-accent/10 transition-colors relative"
-          onClick={() => onExpand(content)}
-          onKeyDown={(e) => e.key === "Enter" && onExpand(content)}
+          onClick={(e) => {
+            if (e.shiftKey && onOpenGallery) {
+              onOpenGallery({ blockIndex, content, scope: "file" });
+            } else {
+              onExpand(content);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (e.shiftKey && onOpenGallery) {
+                onOpenGallery({ blockIndex, content, scope: "file" });
+              } else {
+                onExpand(content);
+              }
+            }
+          }}
           role="button"
           tabIndex={0}
-          title="Click to expand diagram"
+          title="Click to expand · Shift+click for gallery"
         >
           <div ref={svgTargetRef} />
           {isRendering && (
@@ -117,16 +133,24 @@ function MermaidDiagram({ content, onExpand }: MermaidDiagramProps) {
 
 export type MarkdownPreviewLayout = "standalone" | "embedded";
 
+export type OpenGalleryFromPreviewOptions = {
+  blockIndex?: number;
+  content?: string;
+  scope?: "workspace" | "file";
+};
+
 interface MarkdownPreviewProps {
   workspaceRoot: string;
   filePath: string;
   layout?: MarkdownPreviewLayout;
+  onOpenGallery?: (opts: OpenGalleryFromPreviewOptions) => void;
 }
 
 export function MarkdownPreview({
   workspaceRoot,
   filePath,
   layout = "standalone",
+  onOpenGallery,
 }: MarkdownPreviewProps) {
   const [content, setContent] = useState<string>("");
   const [segments, setSegments] = useState<MarkdownSegment[]>([]);
@@ -135,6 +159,7 @@ export function MarkdownPreview({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [title, setTitle] = useState<string>("Markdown Preview");
   const [expandedDiagram, setExpandedDiagram] = useState<string | null>(null);
+  const [expandedBlockIndex, setExpandedBlockIndex] = useState<number | undefined>();
   const [isRendering] = useState<boolean>(false);
 
   const contentHashRef = useRef<string>("");
@@ -228,8 +253,12 @@ export function MarkdownPreview({
   const renderSegments = () => {
     if (segments.length === 0) return null;
 
+    let mermaidBlockIndex = 0;
+
     return segments.map((seg, i) => {
       if (seg.type === "mermaid") {
+        const blockIndex = mermaidBlockIndex;
+        mermaidBlockIndex += 1;
         return (
           <ErrorBoundary
             key={`mermaid-${i}`}
@@ -239,7 +268,15 @@ export function MarkdownPreview({
               </div>
             }
           >
-            <MermaidDiagram content={seg.content} onExpand={setExpandedDiagram} />
+            <MermaidDiagram
+              content={seg.content}
+              blockIndex={blockIndex}
+              onExpand={(diagramContent) => {
+                setExpandedBlockIndex(blockIndex);
+                setExpandedDiagram(diagramContent);
+              }}
+              onOpenGallery={onOpenGallery}
+            />
           </ErrorBoundary>
         );
       }
@@ -310,6 +347,16 @@ export function MarkdownPreview({
               Updated at {formatTime(lastUpdated)}
             </span>
           )}
+          {onOpenGallery && (
+            <button
+              type="button"
+              onClick={() => onOpenGallery({ scope: "file" })}
+              className="px-3 py-1 text-xs bg-slack-bg hover:bg-slack-accent text-slack-text hover:text-white rounded border border-slack-border transition-colors"
+              title="Browse all diagrams in gallery"
+            >
+              Gallery
+            </button>
+          )}
           <button
             type="button"
             onClick={handleRefresh}
@@ -336,8 +383,23 @@ export function MarkdownPreview({
 
       <MermaidModal
         isOpen={expandedDiagram !== null}
-        onClose={() => setExpandedDiagram(null)}
+        onClose={() => {
+          setExpandedDiagram(null);
+          setExpandedBlockIndex(undefined);
+        }}
         content={expandedDiagram || ""}
+        onViewInGallery={
+          onOpenGallery
+            ? () => {
+                setExpandedDiagram(null);
+                onOpenGallery({
+                  scope: "file",
+                  blockIndex: expandedBlockIndex,
+                  content: expandedDiagram ?? undefined,
+                });
+              }
+            : undefined
+        }
       />
 
       {loading && content && (

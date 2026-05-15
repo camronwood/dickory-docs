@@ -44,30 +44,11 @@ def saturation(rgb: np.ndarray) -> np.ndarray:
     return out
 
 
-def knock_out_rgba(
-    arr: np.ndarray,
-    *,
-    lum_seed: float,
-    lum_fill: float,
-    sat_max: float,
+def _edge_flood_mask(
+    can_fill: np.ndarray,
+    seeds: np.ndarray,
 ) -> np.ndarray:
-    """Return new RGBA array with edge-connected background cleared to transparent."""
-    h, w = arr.shape[:2]
-    rgb = arr[:, :, :3].astype(np.float64)
-    L = luminance(rgb)
-    S = saturation(rgb)
-
-    # Candidate cells for background propagation (gradient-friendly).
-    can_fill = (L >= lum_fill) & (S <= sat_max)
-
-    # Seeds: border pixels that clearly read as backdrop (bright + low saturation).
-    seeds = np.zeros((h, w), dtype=bool)
-    edge = np.zeros((h, w), dtype=bool)
-    edge[0, :] = edge[-1, :] = True
-    edge[:, 0] = edge[:, -1] = True
-
-    seeds = edge & can_fill & (L >= lum_seed)
-
+    h, w = can_fill.shape
     visited = np.zeros((h, w), dtype=bool)
     q: deque[tuple[int, int]] = deque()
     for y in range(h):
@@ -86,6 +67,58 @@ def knock_out_rgba(
                 continue
             visited[ny, nx] = True
             q.append((ny, nx))
+
+    return visited
+
+
+def knock_out_rgba(
+    arr: np.ndarray,
+    *,
+    lum_seed: float,
+    lum_fill: float,
+    sat_max: float,
+) -> np.ndarray:
+    """Return new RGBA array with edge-connected light background cleared to transparent."""
+    h, w = arr.shape[:2]
+    rgb = arr[:, :, :3].astype(np.float64)
+    L = luminance(rgb)
+    S = saturation(rgb)
+
+    can_fill = (L >= lum_fill) & (S <= sat_max)
+
+    edge = np.zeros((h, w), dtype=bool)
+    edge[0, :] = edge[-1, :] = True
+    edge[:, 0] = edge[:, -1] = True
+
+    seeds = edge & can_fill & (L >= lum_seed)
+    visited = _edge_flood_mask(can_fill, seeds)
+
+    out = arr.copy()
+    out[:, :, 3] = np.where(visited, 0, out[:, :, 3])
+    return out
+
+
+def knock_out_dark_rgba(
+    arr: np.ndarray,
+    *,
+    lum_seed: float,
+    lum_fill: float,
+    sat_max: float,
+) -> np.ndarray:
+    """Return new RGBA array with edge-connected dark/black background cleared to transparent."""
+    h, w = arr.shape[:2]
+    rgb = arr[:, :, :3].astype(np.float64)
+    L = luminance(rgb)
+    S = saturation(rgb)
+
+    can_fill = (L <= lum_fill) & (S <= sat_max)
+
+    edge = np.zeros((h, w), dtype=bool)
+    edge[0, :] = edge[-1, :] = True
+    edge[:, 0] = edge[:, -1] = True
+
+    seeds = edge & can_fill & (L <= lum_seed)
+    visited = _edge_flood_mask(can_fill, seeds)
 
     out = arr.copy()
     out[:, :, 3] = np.where(visited, 0, out[:, :, 3])
@@ -114,16 +147,42 @@ def main() -> None:
         default=0.42,
         help="Max saturation for background pixels (blocks saturated blues). Default 0.42.",
     )
+    ap.add_argument(
+        "--bg",
+        choices=("light", "dark"),
+        default="light",
+        help="Background type to remove: light squircle/gradient (default) or dark/black.",
+    )
+    ap.add_argument(
+        "--lum-seed-dark",
+        type=float,
+        default=55.0,
+        help="Max luminance on border to start dark flood (0–255). Default 55.",
+    )
+    ap.add_argument(
+        "--lum-fill-dark",
+        type=float,
+        default=75.0,
+        help="Max luminance for dark interior continuation. Default 75.",
+    )
     args = ap.parse_args()
 
     img = Image.open(args.input).convert("RGBA")
     arr = np.asarray(img)
-    out = knock_out_rgba(
-        arr,
-        lum_seed=args.lum_seed,
-        lum_fill=args.lum_fill,
-        sat_max=args.sat_max,
-    )
+    if args.bg == "dark":
+        out = knock_out_dark_rgba(
+            arr,
+            lum_seed=args.lum_seed_dark,
+            lum_fill=args.lum_fill_dark,
+            sat_max=args.sat_max,
+        )
+    else:
+        out = knock_out_rgba(
+            arr,
+            lum_seed=args.lum_seed,
+            lum_fill=args.lum_fill,
+            sat_max=args.sat_max,
+        )
     result = Image.fromarray(out, mode="RGBA")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     result.save(args.output, format="PNG")

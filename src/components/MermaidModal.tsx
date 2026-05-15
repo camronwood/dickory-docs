@@ -1,23 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { renderMermaidSvg } from "../utils/mermaidConfig";
+import { useEffect } from "react";
+import { MermaidCanvas } from "./MermaidCanvas";
 
 interface MermaidModalProps {
   isOpen: boolean;
   onClose: () => void;
   content: string;
+  onViewInGallery?: () => void;
 }
 
-export function MermaidModal({ isOpen, onClose, content }: MermaidModalProps) {
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const diagramRef = useRef<HTMLDivElement>(null);
-  const fullScreenScaleRef = useRef<number>(1);
-
+export function MermaidModal({
+  isOpen,
+  onClose,
+  content,
+  onViewInGallery,
+}: MermaidModalProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isOpen) {
@@ -35,117 +31,6 @@ export function MermaidModal({ isOpen, onClose, content }: MermaidModalProps) {
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (isOpen && diagramRef.current && containerRef.current) {
-      const renderDiagram = async () => {
-        try {
-          diagramRef.current!.innerHTML = "";
-          const svg = await renderMermaidSvg(content);
-          diagramRef.current!.innerHTML = svg;
-
-          requestAnimationFrame(() => {
-            if (!diagramRef.current || !containerRef.current) return;
-
-            const svgElement = diagramRef.current.querySelector("svg");
-            if (!svgElement) return;
-
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const padding = 32;
-            const availableWidth = containerRect.width - padding;
-            const availableHeight = containerRect.height - padding;
-
-            let svgWidth = svgElement.getBoundingClientRect().width;
-            let svgHeight = svgElement.getBoundingClientRect().height;
-
-            if ((!svgWidth || svgWidth === 0) && svgElement.viewBox?.baseVal) {
-              svgWidth = svgElement.viewBox.baseVal.width;
-              svgHeight = svgElement.viewBox.baseVal.height;
-            }
-
-            if ((!svgWidth || svgWidth === 0) && svgElement.hasAttribute("width")) {
-              svgWidth = parseFloat(svgElement.getAttribute("width") || "800");
-              svgHeight = parseFloat(svgElement.getAttribute("height") || "600");
-            }
-
-            if (!svgWidth || svgWidth === 0) {
-              svgWidth = 800;
-              svgHeight = 600;
-            }
-
-            const scaleX = availableWidth / svgWidth;
-            const scaleY = availableHeight / svgHeight;
-            const fitScale = Math.min(scaleX, scaleY);
-            const initialScale = Math.max(0.1, Math.min(5, fitScale));
-            fullScreenScaleRef.current = initialScale;
-            setScale(initialScale);
-          });
-        } catch (error) {
-          console.error("Mermaid rendering error:", error);
-          diagramRef.current!.innerHTML = `
-            <div class="p-4 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm">
-              <strong>Mermaid Diagram Error:</strong>
-              <pre class="mt-2 text-xs">${error}</pre>
-            </div>
-          `;
-          fullScreenScaleRef.current = 1;
-          setScale(1);
-        }
-      };
-
-      renderDiagram();
-    }
-  }, [isOpen, content]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setPosition({ x: 0, y: 0 });
-      setLastPosition({ x: 0, y: 0 });
-    }
-  }, [isOpen]);
-
-  const handleZoomIn = () => {
-    setScale((prev) => Math.min(prev * 1.2, 5));
-  };
-
-  const handleZoomOut = () => {
-    setScale((prev) => Math.max(prev / 1.2, 0.1));
-  };
-
-  const handleReset = () => {
-    setScale(fullScreenScaleRef.current);
-    setPosition({ x: 0, y: 0 });
-    setLastPosition({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === diagramRef.current || diagramRef.current?.contains(e.target as Node)) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX, y: e.clientY });
-      setLastPosition(position);
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      setPosition({
-        x: lastPosition.x + deltaX,
-        y: lastPosition.y + deltaY,
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale((prev) => Math.max(0.1, Math.min(5, prev * delta)));
-  };
 
   if (!isOpen) return null;
 
@@ -165,67 +50,25 @@ export function MermaidModal({ isOpen, onClose, content }: MermaidModalProps) {
         </svg>
       </button>
 
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+      {onViewInGallery && (
         <button
           type="button"
-          onClick={handleZoomIn}
-          className="p-2 bg-slack-bgHover hover:bg-slack-accent text-slack-text hover:text-white rounded transition-colors"
-          title="Zoom In"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewInGallery();
+          }}
+          className="absolute top-4 right-16 z-10 px-3 py-2 bg-slack-bgHover hover:bg-slack-accent text-slack-text hover:text-white rounded text-sm transition-colors"
+          title="View in diagram gallery"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          Gallery
         </button>
-        <button
-          type="button"
-          onClick={handleZoomOut}
-          className="p-2 bg-slack-bgHover hover:bg-slack-accent text-slack-text hover:text-white rounded transition-colors"
-          title="Zoom Out"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="p-2 bg-slack-bgHover hover:bg-slack-accent text-slack-text hover:text-white rounded transition-colors"
-          title="Reset View"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div className="absolute bottom-4 left-4 z-10 px-3 py-1 bg-slack-bgHover text-slack-text rounded text-sm">
-        {Math.round(scale * 100)}%
-      </div>
+      )}
 
       <div
-        ref={containerRef}
-        className="relative w-[95vw] h-[95vh] overflow-hidden cursor-grab active:cursor-grabbing flex items-center justify-center"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        className="relative w-[95vw] h-[95vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          ref={diagramRef}
-          className="p-4 bg-white rounded border border-slack-border flex items-center justify-center"
-          style={{
-            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            transformOrigin: "center center",
-            transition: isDragging ? "none" : "transform 0.1s ease-out",
-          }}
-        />
+        <MermaidCanvas content={content} active={isOpen} className="w-full h-full" />
       </div>
     </div>
   );

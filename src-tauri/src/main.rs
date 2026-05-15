@@ -2,9 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use chrono::{DateTime, Utc};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Component, Path, PathBuf};
+use walkdir::WalkDir;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct WorkspaceRecord {
@@ -260,6 +262,107 @@ fn rename_entry(root: String, old_path: String, new_path: String) -> Result<(), 
     fs::rename(&from, &to).map_err(|e| e.to_string())
 }
 
+const SKIP_DIR_NAMES: &[&str] = &[
+    ".git",
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    ".venv",
+    "__pycache__",
+    ".tauri",
+];
+
+fn should_skip_dir(name: &str) -> bool {
+    SKIP_DIR_NAMES.contains(&name)
+}
+
+fn is_markdown_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|ext| {
+            let ext = ext.to_ascii_lowercase();
+            ext == "md" || ext == "markdown"
+        })
+        .unwrap_or(false)
+}
+
+/// Match TS: /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi
+fn extract_mermaid_blocks_from_markdown(content: &str) -> Vec<String> {
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| {
+        Regex::new(r"(?is)```\s*mermaid\s*(?:\r?\n|\r)([\s\S]*?)```")
+            .expect("mermaid fence regex")
+    });
+    re.captures_iter(content)
+        .filter_map(|cap| {
+            let body = cap.get(1)?.as_str().trim();
+            if body.is_empty() {
+                None
+            } else {
+                Some(body.to_string())
+            }
+        })
+        .collect()
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MermaidBlockOut {
+    pub path: String,
+    pub block_index: u32,
+    pub content: String,
+}
+
+#[tauri::command]
+fn workspace_scan_mermaid(root: String) -> Result<Vec<MermaidBlockOut>, String> {
+    let root_pb = root_path_buf(&root)?;
+    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+    let mut blocks: Vec<MermaidBlockOut> = Vec::new();
+
+    for entry in WalkDir::new(&root_canon)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(|e| {
+            if e.file_type().is_dir() {
+                let name = e.file_name().to_string_lossy();
+                return !should_skip_dir(&name);
+            }
+            true
+        })
+    {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let full = entry.path();
+        if !is_markdown_file(full) {
+            continue;
+        }
+        let rel = rel_path_from_root(&root_canon, full)?;
+        let text = fs::read_to_string(full).map_err(|e| e.to_string())?;
+        for (block_index, content) in extract_mermaid_blocks_from_markdown(&text)
+            .into_iter()
+            .enumerate()
+        {
+            blocks.push(MermaidBlockOut {
+                path: rel.clone(),
+                block_index: block_index as u32,
+                content,
+            });
+        }
+    }
+
+    blocks.sort_by(|a, b| {
+        a.path
+            .to_lowercase()
+            .cmp(&b.path.to_lowercase())
+            .then(a.block_index.cmp(&b.block_index))
+    });
+
+    Ok(blocks)
+}
+
 #[tauri::command]
 fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
     let root_pb = root_path_buf(&root)?;
@@ -286,6 +389,7 @@ fn main() {
             create_folder,
             rename_entry,
             delete_entry,
+            workspace_scan_mermaid,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
