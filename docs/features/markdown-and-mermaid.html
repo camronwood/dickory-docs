@@ -56,6 +56,15 @@
       <h2>Markdown preview (the wrapper)</h2>
       <p>Mermaid lives inside real documents. The preview pane also extracts a document title for the window chrome (<code>{title} · Dickory Docs</code>) and tracks a content hash to skip redundant re-renders when the file has not changed.</p>
 
+      <h2>TOC anchor links</h2>
+      <p>Internal links like <code>[Why](#why)</code> in an Index section scroll to the matching heading. Headings get GitHub-style <code>id</code> attributes so RFCs and long READMEs navigate like they do on GitHub.</p>
+
+      <h2>Find in document</h2>
+      <p>Click <strong>Find</strong> in the preview toolbar or press <strong>⌘F</strong> / <strong>Ctrl+F</strong>. Matches are highlighted in the rendered preview (and in plain-text files); <strong>Enter</strong> and <strong>Shift+Enter</strong> step through results.</p>
+
+      <h2>Diagram gallery</h2>
+      <p>Browse every <code>```mermaid</code> block in the active workspace or the current file. Pan and zoom in the gallery; open the source Markdown from a thumbnail. Smoother zoom on macOS in v0.2.0 (no compositor smear when scaling diagrams).</p>
+
       <h2>Preview deep links</h2>
       <p>Jump straight to a diagram-bearing file with query parameters:</p>
       <ul>
@@ -68,7 +77,7 @@
         <h2>Supporting guides</h2>
         <ul>
           <li><a href="workspaces.html">Workspaces</a> — point the viewer at your doc folders.</li>
-          <li><a href="file-explorer.html">File explorer</a> — find <code>.md</code> files quickly (markdown-only filter).</li>
+          <li><a href="file-explorer.html">File explorer</a> — filter by file name or Markdown-only to find <code>.md</code> files quickly.</li>
         </ul>
       </aside>
     </article>

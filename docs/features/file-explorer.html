@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>File explorer — Dickory Docs</title>
-  <meta name="description" content="Resizable file tree, markdown-only filter, and file CRUD in Dickory Docs." />
+  <meta name="description" content="Resizable file tree, filter by file name, markdown-only filter, and file CRUD in Dickory Docs." />
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icon/favicon-32.png" />
   <link rel="apple-touch-icon" href="../assets/icon/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,15 +33,18 @@
     </nav>
     <header class="feature-deep-hero">
       <h1>File explorer</h1>
-      <p class="feature-deep-lead">A resizable sidebar tree backed by Rust directory walks — browse, filter, and manage files under each workspace root.</p>
+      <p class="feature-deep-lead">A resizable sidebar tree backed by Rust directory walks — browse, filter by name or type, and manage files under each workspace root.</p>
     </header>
 
     <article class="feature-prose">
       <h2>Tree navigation</h2>
       <p>Directories load children on expand. Click a file to open it: Markdown routes to the preview pane; other extensions open as plain text in a monospace view.</p>
 
+      <h2>Filter by file name</h2>
+      <p>Type in the sidebar search box to narrow the tree to files and folders whose <strong>names</strong> match (case-insensitive). Matching folders auto-expand; name hits are highlighted. Search applies to <strong>loaded</strong> directories — expand parents to search deeper subtrees.</p>
+
       <h2>Markdown-only filter</h2>
-      <p>Toggle <strong>Markdown only</strong> to hide non-<code>.md</code> files and prune empty folders after filtering. The preference persists in <code>localStorage</code> (with fallback for the legacy Doc Watson key).</p>
+      <p>Toggle <strong>Markdown only</strong> to hide non-<code>.md</code> files and prune empty folders after filtering. Works together with the file name filter. The preference persists in <code>localStorage</code> (with fallback for the legacy Doc Watson key).</p>
 
       <h2>Resizable panel</h2>
       <p>Drag the right edge of the explorer to change width (clamped between sensible min/max values). Width is saved per install.</p>

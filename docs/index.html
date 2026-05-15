@@ -81,7 +81,7 @@
         <aside class="latest-feature-aside" aria-label="Also included">
           <p class="latest-feature-aside-label">Everything around the viewer</p>
           <p class="latest-feature-aside-title">Markdown preview + repo folders</p>
-          <p class="latest-feature-aside-text">Mermaid lives inside real docs. Add <strong>workspaces</strong> for your doc trees, filter to <strong>Markdown only</strong>, and use the explorer when you need to create or rename files — but the win is seeing diagrams without friction.</p>
+          <p class="latest-feature-aside-text">Mermaid lives inside real docs. Add <strong>workspaces</strong> for your doc trees, <strong>filter by file name</strong> or <strong>Markdown only</strong>, use <strong>Find</strong> (⌘F) in long RFCs, and follow <strong>TOC links</strong> — but the win is seeing diagrams without friction.</p>
           <a class="btn btn-ghost btn-sm" href="features/workspaces.html">Workspaces guide →</a>
         </aside>
       </div>
@@ -94,6 +94,8 @@
         <span><strong>Markdown</strong> rendered preview</span>
         <span aria-hidden="true">·</span>
         <span><strong>Workspaces</strong> folders on disk</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>Search</strong> files &amp; in-doc (⌘F)</span>
       </div>
     </div>
 
@@ -111,7 +113,7 @@
           <article class="card">
             <div class="card-icon" aria-hidden="true">📝</div>
             <h3>Markdown preview</h3>
-            <p>Rendered HTML with sanitisation and title extraction — the canvas your diagrams live in, not an afterthought.</p>
+            <p>Rendered HTML with sanitisation, <strong>working TOC anchor links</strong>, and <strong>Find in document</strong> (⌘F / Ctrl+F) — the canvas your diagrams live in, not an afterthought.</p>
             <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Rendering details →</a></p>
           </article>
           <article class="card">
@@ -123,7 +125,7 @@
           <article class="card">
             <div class="card-icon" aria-hidden="true">🌲</div>
             <h3>File explorer</h3>
-            <p>Resizable sidebar, markdown-only filter, context-menu create/rename/delete, and plain-text view for non-Markdown files.</p>
+            <p>Resizable sidebar, <strong>filter by file name</strong>, markdown-only filter, context-menu create/rename/delete, and plain-text view for non-Markdown files.</p>
             <p class="card-cta"><a class="card-link" href="features/file-explorer.html">Deep dive →</a></p>
           </article>
           <article class="card">
@@ -161,13 +163,13 @@
     <section class="section-alt" aria-labelledby="workflow-heading">
       <div class="wrap">
         <h2 id="workflow-heading">How you view diagrams</h2>
-        <p class="section-intro">Three steps from repo to rendered Mermaid — no export, no online editor.</p>
+        <p class="section-intro">From repo to rendered Mermaid — then search and jump through long docs. No export, no online editor.</p>
         <div class="grid-2">
           <div class="workflow-block">
             <h3 class="workflow-title">1. Open your doc folder</h3>
             <ul class="feature-list feature-list--tight">
               <li>Add a <strong>workspace</strong> pointing at the repo or docs tree.</li>
-              <li>Toggle <strong>Markdown only</strong> to jump straight to <code>.md</code> files.</li>
+              <li>Toggle <strong>Markdown only</strong> or type in the <strong>file name</strong> filter to jump straight to the right <code>.md</code>.</li>
               <li>Pick the file that contains your diagrams.</li>
             </ul>
           </div>
@@ -179,6 +181,15 @@
               <li>Surrounding Markdown still renders — context stays with the chart.</li>
             </ul>
           </div>
+          </div>
+        </div>
+        <div class="workflow-block" style="margin-top: 1.5rem;">
+          <h3 class="workflow-title">3. Navigate long docs</h3>
+          <ul class="feature-list feature-list--tight">
+            <li>Click <strong>Index</strong> / TOC links — headings scroll into view (GitHub-style anchors).</li>
+            <li>Press <strong>⌘F</strong> (or <strong>Ctrl+F</strong>) to search the open file; Enter cycles matches.</li>
+            <li>Open the <strong>diagram gallery</strong> to browse every Mermaid block in the workspace or file.</li>
+          </ul>
         </div>
       </div>
     </section>
