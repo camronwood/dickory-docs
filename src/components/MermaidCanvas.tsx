@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import { renderMermaidSvg } from "../utils/mermaidConfig";
 
 export interface MermaidCanvasProps {
@@ -193,8 +193,14 @@ export function MermaidCanvas({
     }
   };
 
-  const transformTransition =
-    isDragging || isWheeling ? "none" : "transform 0.18s cubic-bezier(0.25, 0.1, 0.25, 1)";
+  // No CSS transition on transform — animating scale on a white layer causes
+  // compositor smear (horizontal "trails") on macOS WebKit when zooming.
+  const transformLayerStyle: CSSProperties = {
+    transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
+    transformOrigin: "center center",
+    backfaceVisibility: "hidden",
+    willChange: isDragging || isWheeling ? "transform" : undefined,
+  };
 
   return (
     <div className={`relative flex flex-col flex-1 min-h-0 ${className}`}>
@@ -255,7 +261,7 @@ export function MermaidCanvas({
       ) : (
         <div
           ref={containerRef}
-          className="relative flex-1 min-h-0 overflow-hidden cursor-grab active:cursor-grabbing flex items-center justify-center"
+          className="relative flex-1 min-h-0 overflow-hidden isolate cursor-grab active:cursor-grabbing flex items-center justify-center [contain:paint]"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={stopDrag}
@@ -269,15 +275,12 @@ export function MermaidCanvas({
               </div>
             </div>
           )}
-          <div
-            ref={diagramRef}
-            className="p-4 bg-white rounded border border-slack-border flex items-center justify-center"
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              transformOrigin: "center center",
-              transition: transformTransition,
-            }}
-          />
+          <div className="flex items-center justify-center" style={transformLayerStyle}>
+            <div
+              ref={diagramRef}
+              className="p-4 bg-white rounded border border-slack-border flex items-center justify-center"
+            />
+          </div>
         </div>
       )}
 
