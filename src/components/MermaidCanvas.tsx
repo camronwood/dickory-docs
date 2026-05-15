@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { renderMermaidSvg } from "../utils/mermaidConfig";
 
 export interface MermaidCanvasProps {
@@ -11,13 +11,50 @@ export interface MermaidCanvasProps {
 const WHEEL_ZOOM_INTENSITY = 0.002;
 const BUTTON_ZOOM_FACTOR = 1.2;
 const MIN_SCALE = 1e-4;
-const WHEEL_SMOOTH_MS = 120;
-
 function formatZoomLabel(scale: number): string {
   const pct = scale * 100;
   if (pct >= 10000 || pct < 0.1) return `${scale.toFixed(2)}×`;
   if (pct >= 1000) return `${Math.round(pct)}%`;
   return `${Math.round(pct)}%`;
+}
+
+function readSvgNativeSize(svg: SVGSVGElement): { width: number; height: number } {
+  if (svg.viewBox?.baseVal && svg.viewBox.baseVal.width > 0) {
+    return {
+      width: svg.viewBox.baseVal.width,
+      height: svg.viewBox.baseVal.height,
+    };
+  }
+  const widthAttr = svg.getAttribute("width");
+  const heightAttr = svg.getAttribute("height");
+  if (widthAttr && heightAttr && !widthAttr.includes("%")) {
+    return {
+      width: parseFloat(widthAttr) || 800,
+      height: parseFloat(heightAttr) || 600,
+    };
+  }
+  const rect = svg.getBoundingClientRect();
+  if (rect.width > 0 && rect.height > 0) {
+    return { width: rect.width, height: rect.height };
+  }
+  return { width: 800, height: 600 };
+}
+
+/** Size the SVG element directly so initial fit stays sharp (avoid CSS scale for fit). */
+function applySvgDisplaySize(
+  svg: SVGSVGElement,
+  nativeWidth: number,
+  nativeHeight: number,
+  displayScale: number
+) {
+  const w = nativeWidth * displayScale;
+  const h = nativeHeight * displayScale;
+  svg.setAttribute("width", String(w));
+  svg.setAttribute("height", String(h));
+  svg.style.width = `${w}px`;
+  svg.style.height = `${h}px`;
+  svg.style.maxWidth = "none";
+  svg.style.display = "block";
 }
 
 export function MermaidCanvas({
@@ -26,10 +63,9 @@ export function MermaidCanvas({
   className = "",
   showZoomControls = true,
 }: MermaidCanvasProps) {
-  const [scale, setScale] = useState(1);
+  const [userScale, setUserScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [isWheeling, setIsWheeling] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -38,13 +74,14 @@ export function MermaidCanvas({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const diagramRef = useRef<HTMLDivElement>(null);
-  const fullScreenScaleRef = useRef<number>(1);
-  const wheelSmoothTimerRef = useRef<number | null>(null);
+  const fitScaleRef = useRef(1);
+  const nativeSizeRef = useRef({ width: 800, height: 600 });
+  const displayScale = () => fitScaleRef.current * userScale;
 
   const applyZoomAtPoint = useCallback(
     (factor: number, centerX: number, centerY: number) => {
       if (factor <= 0 || !Number.isFinite(factor)) return;
-      setScale((prevScale) => {
+      setUserScale((prevScale) => {
         const nextScale = Math.max(MIN_SCALE, prevScale * factor);
         const appliedFactor = nextScale / prevScale;
         setPosition((prevPos) => ({
@@ -57,29 +94,11 @@ export function MermaidCanvas({
     []
   );
 
-  const markWheeling = useCallback(() => {
-    setIsWheeling(true);
-    if (wheelSmoothTimerRef.current !== null) {
-      window.clearTimeout(wheelSmoothTimerRef.current);
-    }
-    wheelSmoothTimerRef.current = window.setTimeout(() => {
-      setIsWheeling(false);
-      wheelSmoothTimerRef.current = null;
-    }, WHEEL_SMOOTH_MS);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (wheelSmoothTimerRef.current !== null) {
-        window.clearTimeout(wheelSmoothTimerRef.current);
-      }
-    };
-  }, []);
-
   useEffect(() => {
     if (!active) return;
     setPosition({ x: 0, y: 0 });
     setLastPosition({ x: 0, y: 0 });
+    setUserScale(1);
   }, [active, content]);
 
   useEffect(() => {
@@ -100,41 +119,30 @@ export function MermaidCanvas({
           const svgElement = diagramRef.current.querySelector("svg");
           if (!svgElement) return;
 
+          const native = readSvgNativeSize(svgElement);
+          nativeSizeRef.current = native;
+
           const containerRect = containerRef.current.getBoundingClientRect();
           const padding = 32;
           const availableWidth = containerRect.width - padding;
           const availableHeight = containerRect.height - padding;
 
-          let svgWidth = svgElement.getBoundingClientRect().width;
-          let svgHeight = svgElement.getBoundingClientRect().height;
-
-          if ((!svgWidth || svgWidth === 0) && svgElement.viewBox?.baseVal) {
-            svgWidth = svgElement.viewBox.baseVal.width;
-            svgHeight = svgElement.viewBox.baseVal.height;
-          }
-
-          if ((!svgWidth || svgWidth === 0) && svgElement.hasAttribute("width")) {
-            svgWidth = parseFloat(svgElement.getAttribute("width") || "800");
-            svgHeight = parseFloat(svgElement.getAttribute("height") || "600");
-          }
-
-          if (!svgWidth || svgWidth === 0) {
-            svgWidth = 800;
-            svgHeight = 600;
-          }
-
-          const scaleX = availableWidth / svgWidth;
-          const scaleY = availableHeight / svgHeight;
+          const scaleX = availableWidth / native.width;
+          const scaleY = availableHeight / native.height;
           const fitScale = Math.max(MIN_SCALE, Math.min(scaleX, scaleY));
-          fullScreenScaleRef.current = fitScale;
-          setScale(fitScale);
+          fitScaleRef.current = fitScale;
+
+          applySvgDisplaySize(svgElement, native.width, native.height, fitScale);
+          setUserScale(1);
+          setPosition({ x: 0, y: 0 });
+          setLastPosition({ x: 0, y: 0 });
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error("Mermaid rendering error:", error);
         setRenderError(message);
-        fullScreenScaleRef.current = 1;
-        setScale(1);
+        fitScaleRef.current = 1;
+        setUserScale(1);
       } finally {
         setIsRendering(false);
       }
@@ -149,26 +157,24 @@ export function MermaidCanvas({
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      markWheeling();
 
       const rect = container.getBoundingClientRect();
       const centerX = e.clientX - rect.left - rect.width / 2;
       const centerY = e.clientY - rect.top - rect.height / 2;
 
-      // Scroll/pinch up (negative deltaY) zooms in — same as expand modal
       const factor = Math.exp(-e.deltaY * WHEEL_ZOOM_INTENSITY);
       applyZoomAtPoint(factor, centerX, centerY);
     };
 
     container.addEventListener("wheel", onWheel, { passive: false });
     return () => container.removeEventListener("wheel", onWheel);
-  }, [active, applyZoomAtPoint, markWheeling]);
+  }, [active, applyZoomAtPoint]);
 
   const handleZoomIn = () => applyZoomAtPoint(BUTTON_ZOOM_FACTOR, 0, 0);
   const handleZoomOut = () => applyZoomAtPoint(1 / BUTTON_ZOOM_FACTOR, 0, 0);
 
   const handleReset = () => {
-    setScale(fullScreenScaleRef.current);
+    setUserScale(1);
     setPosition({ x: 0, y: 0 });
     setLastPosition({ x: 0, y: 0 });
   };
@@ -193,14 +199,9 @@ export function MermaidCanvas({
     }
   };
 
-  // No CSS transition on transform — animating scale on a white layer causes
-  // compositor smear (horizontal "trails") on macOS WebKit when zooming.
-  const transformLayerStyle: CSSProperties = {
-    transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
-    transformOrigin: "center center",
-    backfaceVisibility: "hidden",
-    willChange: isDragging || isWheeling ? "transform" : undefined,
-  };
+  // Pan + user zoom only on transform; initial fit uses SVG width/height (sharp).
+  // No CSS transition on transform — avoids compositor smear on macOS when zooming.
+  const diagramTransform = `translate(${position.x}px, ${position.y}px) scale(${userScale})`;
 
   return (
     <div className={`relative flex flex-col flex-1 min-h-0 ${className}`}>
@@ -261,7 +262,7 @@ export function MermaidCanvas({
       ) : (
         <div
           ref={containerRef}
-          className="relative flex-1 min-h-0 overflow-hidden isolate cursor-grab active:cursor-grabbing flex items-center justify-center [contain:paint]"
+          className="relative flex-1 min-h-0 overflow-hidden cursor-grab active:cursor-grabbing flex items-center justify-center"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={stopDrag}
@@ -275,18 +276,20 @@ export function MermaidCanvas({
               </div>
             </div>
           )}
-          <div className="flex items-center justify-center" style={transformLayerStyle}>
-            <div
-              ref={diagramRef}
-              className="p-4 bg-white rounded border border-slack-border flex items-center justify-center"
-            />
-          </div>
+          <div
+            ref={diagramRef}
+            className="p-4 bg-white rounded border border-slack-border flex items-center justify-center"
+            style={{
+              transform: diagramTransform,
+              transformOrigin: "center center",
+            }}
+          />
         </div>
       )}
 
       {showZoomControls && !renderError && (
         <div className="absolute bottom-4 left-4 z-10 px-3 py-1 bg-slack-bgHover text-slack-text rounded text-sm">
-          {formatZoomLabel(scale)}
+          {formatZoomLabel(displayScale())}
         </div>
       )}
     </div>

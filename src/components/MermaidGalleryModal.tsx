@@ -107,7 +107,7 @@ export function MermaidGalleryModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-black/90 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-black/90">
       <div className="flex-shrink-0 flex items-center justify-between gap-4 px-4 py-3 border-b border-slack-border bg-slack-bgHover">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <span className="text-sm font-medium text-slack-text whitespace-nowrap">
