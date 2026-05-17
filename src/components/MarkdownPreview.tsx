@@ -1,156 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import {
-  assignHeadingIds,
   extractTitle,
   getContentHash,
-  renderMarkdown,
-  scrollToHeading,
-  splitMarkdownAndMermaid,
-  type MarkdownSegment,
 } from "../utils/markdownRenderer";
-import { renderMermaidSvg } from "../utils/mermaidConfig";
 import { MermaidModal } from "./MermaidModal";
-import { ErrorBoundary } from "./ErrorBoundary";
 import { DocumentSearchBar } from "./DocumentSearchBar";
 import {
-  clearDocumentHighlights,
-  highlightDocumentMatches,
-} from "../utils/documentSearch";
+  MarkdownPreviewBody,
+  type OpenGalleryFromPreviewOptions,
+} from "./MarkdownPreviewBody";
 
-interface MermaidDiagramProps {
-  content: string;
-  blockIndex: number;
-  onExpand: (content: string) => void;
-  onOpenGallery?: (opts: OpenGalleryFromPreviewOptions) => void;
-}
-
-function MermaidDiagram({ content, blockIndex, onExpand, onOpenGallery }: MermaidDiagramProps) {
-  const svgTargetRef = useRef<HTMLDivElement>(null);
-  const mountedRef = useRef(true);
-  const [isRendering, setIsRendering] = useState(false);
-  const [renderError, setRenderError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const renderDiagram = useCallback(async () => {
-    if (!svgTargetRef.current) return;
-
-    setIsRendering(true);
-    setRenderError(null);
-
-    try {
-      svgTargetRef.current.innerHTML = "";
-      const svg = await renderMermaidSvg(content);
-
-      if (!mountedRef.current || !svgTargetRef.current) return;
-      svgTargetRef.current.innerHTML = svg;
-
-      requestAnimationFrame(() => {
-        if (!mountedRef.current || !svgTargetRef.current) return;
-        const svgEl = svgTargetRef.current.querySelector("svg");
-        if (svgEl) {
-          svgEl.style.maxWidth = "none";
-          svgEl.style.width = "auto";
-          svgEl.style.display = "block";
-          if (svgEl.getAttribute("width")?.includes("%")) {
-            svgEl.removeAttribute("width");
-          }
-        }
-      });
-
-      setRetryCount(0);
-    } catch (err) {
-      if (!mountedRef.current) return;
-      console.error("Mermaid rendering error:", err);
-      setRenderError(err instanceof Error ? err.message : String(err));
-    } finally {
-      if (mountedRef.current) setIsRendering(false);
-    }
-  }, [content]);
-
-  const handleRetry = () => {
-    setRetryCount((prev) => prev + 1);
-    renderDiagram();
-  };
-
-  useEffect(() => {
-    if (svgTargetRef.current) {
-      renderDiagram();
-    }
-  }, [renderDiagram, retryCount]);
-
-  return (
-    <div className="mermaid-diagram w-full my-6">
-      {renderError ? (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm">
-          <strong>Mermaid Diagram Error:</strong>
-          <pre className="mt-2 text-xs whitespace-pre-wrap">{renderError}</pre>
-          <button
-            type="button"
-            className="mt-2 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 rounded text-xs transition-colors"
-            onClick={handleRetry}
-          >
-            Retry
-          </button>
-        </div>
-      ) : (
-        <div
-          className="w-full min-h-[200px] p-6 bg-slack-bgHover rounded border border-slack-border overflow-x-auto overflow-y-visible cursor-pointer hover:bg-slack-accent/10 transition-colors relative"
-          onClick={(e) => {
-            if (e.shiftKey && onOpenGallery) {
-              onOpenGallery({ blockIndex, content, scope: "file" });
-            } else {
-              onExpand(content);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (e.shiftKey && onOpenGallery) {
-                onOpenGallery({ blockIndex, content, scope: "file" });
-              } else {
-                onExpand(content);
-              }
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          title="Click to expand · Shift+click for gallery"
-        >
-          <div ref={svgTargetRef} />
-          {isRendering && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slack-bgHover/80 rounded">
-              <div className="flex items-center gap-2 text-slack-text">
-                <div className="w-4 h-4 border-2 border-slack-accent border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Rendering diagram...</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+export type { OpenGalleryFromPreviewOptions };
 
 export type MarkdownPreviewLayout = "standalone" | "embedded";
-
-export type OpenGalleryFromPreviewOptions = {
-  blockIndex?: number;
-  content?: string;
-  scope?: "workspace" | "file";
-};
 
 interface MarkdownPreviewProps {
   workspaceRoot: string;
   filePath: string;
   layout?: MarkdownPreviewLayout;
   onOpenGallery?: (opts: OpenGalleryFromPreviewOptions) => void;
+  onOpenMarkdownFile?: (relativePath: string) => void;
 }
 
 export function MarkdownPreview({
@@ -158,16 +28,15 @@ export function MarkdownPreview({
   filePath,
   layout = "standalone",
   onOpenGallery,
+  onOpenMarkdownFile,
 }: MarkdownPreviewProps) {
   const [content, setContent] = useState<string>("");
-  const [segments, setSegments] = useState<MarkdownSegment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [title, setTitle] = useState<string>("Markdown Preview");
   const [expandedDiagram, setExpandedDiagram] = useState<string | null>(null);
   const [expandedBlockIndex, setExpandedBlockIndex] = useState<number | undefined>();
-  const [isRendering] = useState<boolean>(false);
   const [docSearchOpen, setDocSearchOpen] = useState(false);
   const [docSearchQuery, setDocSearchQuery] = useState("");
   const [docSearchActiveIndex, setDocSearchActiveIndex] = useState(0);
@@ -176,7 +45,6 @@ export function MarkdownPreview({
   const contentHashRef = useRef<string>("");
   const intervalRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const markdownContentRef = useRef<HTMLDivElement>(null);
 
   const filename = filePath.split("/").pop() || "Unknown";
   const embedded = layout === "embedded";
@@ -204,7 +72,6 @@ export function MarkdownPreview({
 
       if (newHash !== contentHashRef.current) {
         setContent(fileContent);
-        setSegments(splitMarkdownAndMermaid(fileContent));
         setTitle(extractTitle(fileContent));
         setLastUpdated(new Date());
         contentHashRef.current = newHash;
@@ -225,7 +92,6 @@ export function MarkdownPreview({
     setLoading(true);
     contentHashRef.current = "";
     setContent("");
-    setSegments([]);
     setDocSearchOpen(false);
     setDocSearchQuery("");
     setDocSearchActiveIndex(0);
@@ -239,7 +105,7 @@ export function MarkdownPreview({
 
   useEffect(() => {
     intervalRef.current = window.setInterval(() => {
-      if (!loading && !isRendering) {
+      if (!loading) {
         fetchContent();
       }
     }, 2000);
@@ -249,7 +115,7 @@ export function MarkdownPreview({
         window.clearInterval(intervalRef.current);
       }
     };
-  }, [loading, isRendering, workspaceRoot, filePath]);
+  }, [loading, workspaceRoot, filePath]);
 
   useEffect(() => {
     if (!embedded) {
@@ -268,46 +134,6 @@ export function MarkdownPreview({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  useEffect(() => {
-    const root = markdownContentRef.current;
-    if (!root || segments.length === 0) return;
-
-    assignHeadingIds(root);
-
-    if (docSearchOpen && docSearchQuery.trim()) {
-      const count = highlightDocumentMatches(root, docSearchQuery, docSearchActiveIndex);
-      setDocSearchMatchCount(count);
-      return;
-    }
-
-    clearDocumentHighlights(root);
-    setDocSearchMatchCount(0);
-
-    const hash = window.location.hash;
-    if (hash) {
-      requestAnimationFrame(() => scrollToHeading(root, hash));
-    }
-  }, [segments, content, docSearchOpen, docSearchQuery, docSearchActiveIndex]);
-
-  useEffect(() => {
-    const root = markdownContentRef.current;
-    if (!root) return;
-
-    const onClick = (event: MouseEvent) => {
-      const anchor = (event.target as HTMLElement).closest("a");
-      if (!anchor || !root.contains(anchor)) return;
-
-      const href = anchor.getAttribute("href");
-      if (!href?.startsWith("#")) return;
-
-      event.preventDefault();
-      scrollToHeading(root, href);
-    };
-
-    root.addEventListener("click", onClick);
-    return () => root.removeEventListener("click", onClick);
-  }, [segments, content]);
-
   const handleRefresh = () => {
     setLoading(true);
     fetchContent();
@@ -320,41 +146,6 @@ export function MarkdownPreview({
       minute: "2-digit",
       second: "2-digit",
     });
-
-  const renderSegments = () => {
-    if (segments.length === 0) return null;
-
-    let mermaidBlockIndex = 0;
-
-    return segments.map((seg, i) => {
-      if (seg.type === "mermaid") {
-        const blockIndex = mermaidBlockIndex;
-        mermaidBlockIndex += 1;
-        return (
-          <ErrorBoundary
-            key={`mermaid-${i}`}
-            fallback={
-              <div className="my-6 p-4 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm">
-                <strong>Diagram Error:</strong> Failed to render Mermaid diagram.
-              </div>
-            }
-          >
-            <MermaidDiagram
-              content={seg.content}
-              blockIndex={blockIndex}
-              onExpand={(diagramContent) => {
-                setExpandedBlockIndex(blockIndex);
-                setExpandedDiagram(diagramContent);
-              }}
-              onOpenGallery={onOpenGallery}
-            />
-          </ErrorBoundary>
-        );
-      }
-      const html = renderMarkdown(seg.content);
-      return <div key={`md-${i}`} dangerouslySetInnerHTML={{ __html: html }} />;
-    });
-  };
 
   const shellClass = embedded
     ? "relative flex flex-col flex-1 min-h-0 h-full bg-slack-bg"
@@ -481,14 +272,20 @@ export function MarkdownPreview({
       </div>
 
       <div className={embedded ? "flex-1 min-h-0 overflow-auto" : "flex-1 overflow-auto"}>
-        <div className="max-w-6xl mx-auto p-6">
-          <div
-            ref={markdownContentRef}
-            className="markdown-content prose prose-invert max-w-none"
-          >
-            {renderSegments()}
-          </div>
-        </div>
+        <MarkdownPreviewBody
+          content={content}
+          filePath={filePath}
+          onOpenGallery={onOpenGallery}
+          onOpenMarkdownFile={onOpenMarkdownFile}
+          onExpandDiagram={(diagramContent, blockIndex) => {
+            setExpandedBlockIndex(blockIndex);
+            setExpandedDiagram(diagramContent);
+          }}
+          docSearchOpen={docSearchOpen}
+          docSearchQuery={docSearchQuery}
+          docSearchActiveIndex={docSearchActiveIndex}
+          onDocSearchMatchCount={setDocSearchMatchCount}
+        />
       </div>
 
       <MermaidModal

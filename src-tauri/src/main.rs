@@ -4,9 +4,16 @@
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
+use std::sync::Mutex;
+use tauri::api::cli::{ArgData, Matches};
+use tauri::Manager;
 use walkdir::WalkDir;
+
+struct LaunchState(Mutex<Option<Vec<String>>>);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct WorkspaceRecord {
@@ -437,6 +444,138 @@ fn workspace_search_files(
 }
 
 #[tauri::command]
+fn push_markdown_path(paths: &mut Vec<PathBuf>, raw: &str) {
+    let raw = raw.trim();
+    if raw.is_empty() || raw.starts_with('-') {
+        return;
+    }
+    let p = PathBuf::from(raw);
+    if !p.is_absolute() {
+        return;
+    }
+    if p.is_file() && is_markdown_file(&p) {
+        paths.push(p);
+    }
+}
+
+fn dedupe_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for p in paths {
+        let key = p.canonicalize().unwrap_or(p.clone());
+        if seen.insert(key) {
+            out.push(p);
+        }
+    }
+    out
+}
+
+fn collect_launch_paths(cli_matches: Option<&Matches>) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+
+    if let Some(matches) = cli_matches {
+        if let Some(ArgData { value, .. }) = matches.args.get("file") {
+            match value {
+                Value::String(s) => push_markdown_path(&mut paths, s.as_str()),
+                Value::Array(items) => {
+                    for item in items {
+                        if let Value::String(s) = item {
+                            push_markdown_path(&mut paths, s.as_str());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    for arg in std::env::args().skip(1) {
+        push_markdown_path(&mut paths, &arg);
+    }
+
+    dedupe_paths(paths)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct OpenFileResolution {
+    pub workspace_path: String,
+    pub relative_path: String,
+    pub add_workspace: bool,
+    pub workspace_name: String,
+}
+
+#[tauri::command]
+fn take_launch_open_files(state: tauri::State<LaunchState>) -> Result<Vec<String>, String> {
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+    let paths = guard.take().unwrap_or_default();
+    Ok(paths)
+}
+
+#[tauri::command]
+fn resolve_external_file(path: String) -> Result<OpenFileResolution, String> {
+    let file = PathBuf::from(path.trim());
+    let file = file.canonicalize().map_err(|e| e.to_string())?;
+    if !file.is_file() {
+        return Err("not a file".into());
+    }
+    if !is_markdown_file(&file) {
+        return Err("not a markdown file".into());
+    }
+
+    let workspaces = load_workspaces_inner()?;
+    let mut best: Option<&WorkspaceRecord> = None;
+    let mut best_len = 0usize;
+
+    for ws in &workspaces {
+        let root = PathBuf::from(&ws.path);
+        let Ok(root_canon) = root.canonicalize() else {
+            continue;
+        };
+        if file.starts_with(&root_canon) {
+            let len = root_canon.as_os_str().len();
+            if len > best_len {
+                best_len = len;
+                best = Some(ws);
+            }
+        }
+    }
+
+    if let Some(ws) = best {
+        let root_canon = PathBuf::from(&ws.path)
+            .canonicalize()
+            .map_err(|e| e.to_string())?;
+        let rel = rel_path_from_root(&root_canon, &file)?;
+        return Ok(OpenFileResolution {
+            workspace_path: ws.path.clone(),
+            relative_path: rel,
+            add_workspace: false,
+            workspace_name: ws.name.clone(),
+        });
+    }
+
+    let parent = file.parent().ok_or_else(|| "file has no parent directory".to_string())?;
+    let parent_canon = parent.canonicalize().map_err(|e| e.to_string())?;
+    let relative_path = file
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "invalid file name".to_string())?
+        .to_string();
+    let workspace_name = parent
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("Documents")
+        .to_string();
+
+    Ok(OpenFileResolution {
+        workspace_path: parent_canon.to_string_lossy().into_owned(),
+        relative_path,
+        add_workspace: true,
+        workspace_name,
+    })
+}
+
+#[tauri::command]
 fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
     let root_pb = root_path_buf(&root)?;
     let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
@@ -452,6 +591,18 @@ fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            let handle = app.handle();
+            let cli_matches = app.get_cli_matches().ok();
+            let paths = collect_launch_paths(cli_matches.as_ref());
+            let paths: Vec<String> = paths
+                .into_iter()
+                .filter_map(|p| p.canonicalize().ok())
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
+            handle.manage(LaunchState(Mutex::new(Some(paths))));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             workspaces_load,
             workspace_add,
@@ -464,6 +615,8 @@ fn main() {
             delete_entry,
             workspace_scan_mermaid,
             workspace_search_files,
+            take_launch_open_files,
+            resolve_external_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

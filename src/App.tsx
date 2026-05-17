@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { FileExplorerPanel } from "./components/FileExplorerPanel";
 import { MarkdownPreview } from "./components/MarkdownPreview";
+import { MarkdownSplitView } from "./components/MarkdownSplitView";
+import { useMarkdownEditorStore } from "./stores/markdownEditorStore";
 import { TextFileView } from "./components/TextFileView";
 import { MermaidGalleryModal } from "./components/MermaidGalleryModal";
 import {
@@ -16,6 +18,7 @@ import {
   type GalleryScope,
   type ScannedMermaidBlock,
 } from "./utils/mermaidGallery";
+import { openExternalMarkdownFile } from "./utils/openExternalFile";
 
 type Selection =
   | null
@@ -63,6 +66,7 @@ function GalleryScanOverlay() {
 
 export default function App() {
   const [selection, setSelection] = useState<Selection>(null);
+  const [previewOnly, setPreviewOnly] = useState(false);
   const [markdownOnly, setMarkdownOnly] = useState(loadMarkdownOnlyPreference);
   const [gallery, setGallery] = useState<GalleryState | null>(null);
   const [galleryScope, setGalleryScope] = useState<GalleryScope>("workspace");
@@ -77,6 +81,8 @@ export default function App() {
   });
 
   const activeWorkspaceId = useFileExplorerStore((s) => s.activeWorkspaceId);
+  const setSelectedPath = useFileExplorerStore((s) => s.setSelectedPath);
+  const loadWorkspaces = useFileExplorerStore((s) => s.loadWorkspaces);
 
   useEffect(() => {
     saveMarkdownOnlyPreference(markdownOnly);
@@ -88,9 +94,48 @@ export default function App() {
     const workspaceId = params.get("workspace");
     const filePath = params.get("path");
     if (isPreview && workspaceId && filePath) {
+      setPreviewOnly(true);
       setSelection({ kind: "markdown", workspaceId, path: filePath });
     }
   }, []);
+
+  const selectMarkdown = useCallback((workspaceId: string, path: string) => {
+    if (!useMarkdownEditorStore.getState().confirmDiscardIfDirty()) return;
+    setSelection({ kind: "markdown", workspaceId, path });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const paths = await invoke<string[]>("take_launch_open_files");
+        if (cancelled || paths.length === 0) return;
+
+        await loadWorkspaces();
+        if (cancelled) return;
+
+        for (const absPath of paths) {
+          if (cancelled) break;
+          await openExternalMarkdownFile(absPath, selectMarkdown);
+        }
+      } catch (err) {
+        console.error("Failed to open launch file(s):", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadWorkspaces, selectMarkdown]);
+
+  const selectTextFile = useCallback(
+    (workspaceId: string, path: string, content: string) => {
+      if (!useMarkdownEditorStore.getState().confirmDiscardIfDirty()) return;
+      setSelection({ kind: "text", workspaceId, path, content });
+    },
+    []
+  );
 
   const openGallery = useCallback(
     async (opts: OpenGalleryOptions) => {
@@ -163,10 +208,25 @@ export default function App() {
   const handleGalleryOpenSource = useCallback(
     (filePath: string) => {
       if (!gallery) return;
-      setSelection({ kind: "markdown", workspaceId: gallery.workspaceId, path: filePath });
+      selectMarkdown(gallery.workspaceId, filePath);
       setGallery(null);
     },
-    [gallery]
+    [gallery, selectMarkdown]
+  );
+
+  const handleOpenLinkedMarkdown = useCallback(
+    (relativePath: string) => {
+      const workspaceId =
+        selection?.kind === "markdown"
+          ? selection.workspaceId
+          : activeWorkspaceId;
+      if (!workspaceId) return;
+
+      const path = relativePath.replace(/^\/+/, "");
+      setSelectedPath(path);
+      selectMarkdown(workspaceId, path);
+    },
+    [selection, activeWorkspaceId, setSelectedPath, selectMarkdown]
   );
 
   const currentMarkdownPath =
@@ -177,25 +237,32 @@ export default function App() {
       <FileExplorerPanel
         markdownOnly={markdownOnly}
         onMarkdownOnlyChange={setMarkdownOnly}
-        onSelectMarkdown={(workspaceId, path) => {
-          setSelection({ kind: "markdown", workspaceId, path });
-        }}
-        onSelectTextFile={(workspaceId, path, content) => {
-          setSelection({ kind: "text", workspaceId, path, content });
-        }}
+        onSelectMarkdown={selectMarkdown}
+        onSelectTextFile={selectTextFile}
         onOpenGallery={activeWorkspaceId ? handleOpenGalleryFromExplorer : undefined}
         galleryScanError={galleryScanError}
         onDismissGalleryScanError={() => setGalleryScanError(null)}
       />
       <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         {!selection && <EmptyViewer />}
-        {selection?.kind === "markdown" && (
+        {selection?.kind === "markdown" && previewOnly && (
           <MarkdownPreview
             key={`${selection.workspaceId}:${selection.path}`}
             workspaceRoot={markdownWorkspaceRoot}
             filePath={selection.path}
             layout="embedded"
             onOpenGallery={handleOpenGalleryFromPreview}
+            onOpenMarkdownFile={handleOpenLinkedMarkdown}
+          />
+        )}
+        {selection?.kind === "markdown" && !previewOnly && (
+          <MarkdownSplitView
+            key={`${selection.workspaceId}:${selection.path}`}
+            workspaceId={selection.workspaceId}
+            workspaceRoot={markdownWorkspaceRoot}
+            filePath={selection.path}
+            onOpenGallery={handleOpenGalleryFromPreview}
+            onOpenMarkdownFile={handleOpenLinkedMarkdown}
           />
         )}
         {selection?.kind === "text" && (

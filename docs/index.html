@@ -23,7 +23,7 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>v0.2.1 available</strong>
+      <strong>v0.3.0 available</strong>
       <span><a href="https://github.com/camronwood/dickory-docs/releases/latest">Download installers</a> for macOS, Windows, and Linux — or <span class="dev-banner-highlight">build from source</span>. Feedback and <a href="https://github.com/camronwood/dickory-docs/pulls">pull requests</a> welcome.</span>
     </div>
   </div>
@@ -81,7 +81,7 @@
         <aside class="latest-feature-aside" aria-label="Also included">
           <p class="latest-feature-aside-label">Everything around the viewer</p>
           <p class="latest-feature-aside-title">Markdown preview + repo folders</p>
-          <p class="latest-feature-aside-text">Mermaid lives inside real docs. Add <strong>workspaces</strong> for your doc trees, <strong>filter by file name</strong> or <strong>Markdown only</strong>, use <strong>Find</strong> (⌘F) in long RFCs, and follow <strong>TOC links</strong> — but the win is seeing diagrams without friction.</p>
+          <p class="latest-feature-aside-text">Mermaid lives inside real docs. Add <strong>workspaces</strong> for your doc trees, <strong>edit Markdown in-app</strong> with live preview, <strong>Open With</strong> from Finder, <strong>filter by file name</strong> or <strong>Markdown only</strong>, use <strong>Find</strong> (⌘F) in long RFCs, and follow <strong>TOC links</strong> — but the win is seeing diagrams without friction.</p>
           <a class="btn btn-ghost btn-sm" href="features/workspaces.html">Workspaces guide →</a>
         </aside>
       </div>
@@ -96,6 +96,8 @@
         <span><strong>Workspaces</strong> folders on disk</span>
         <span aria-hidden="true">·</span>
         <span><strong>Search</strong> files &amp; in-doc (⌘F)</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>Edit</strong> Markdown + preview</span>
       </div>
     </div>
 
@@ -139,6 +141,16 @@
             <p>Rust backend normalises paths, rejects <code>..</code> escapes, and serves file trees relative to each workspace root.</p>
           </article>
           <article class="card">
+            <div class="card-icon" aria-hidden="true">✏️</div>
+            <h3>Markdown editor</h3>
+            <p>Split-pane <strong>Monaco</strong> editor with live preview, save to disk, and unsaved-change prompts when switching files.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">📂</div>
+            <h3>Open With</h3>
+            <p>Register as a <strong>Markdown viewer</strong> on macOS — right-click <code>.md</code> files in Finder and open them directly in Dickory Docs.</p>
+          </article>
+          <article class="card">
             <div class="card-icon" aria-hidden="true">⚡</div>
             <h3>Preview deep links</h3>
             <p>Open a specific file via query params (<code>?preview=true&amp;workspace=&amp;path=</code>) for bookmarks or tooling integration.</p>
@@ -170,7 +182,7 @@
             <ul class="feature-list feature-list--tight">
               <li>Add a <strong>workspace</strong> pointing at the repo or docs tree.</li>
               <li>Toggle <strong>Markdown only</strong> or type in the <strong>file name</strong> filter to jump straight to the right <code>.md</code>.</li>
-              <li>Pick the file that contains your diagrams.</li>
+              <li>Pick the file that contains your diagrams — or <strong>Open With</strong> Dickory Docs from Finder.</li>
             </ul>
           </div>
           <div class="workflow-block">
@@ -200,10 +212,10 @@
         <p class="section-intro">Installers for macOS, Windows, and Linux are on <a href="https://github.com/camronwood/dickory-docs/releases">GitHub Releases</a>. See <a href="release-notes.html">release notes</a> for what shipped in each version.</p>
         <div class="release-landing-preview">
           <p class="release-landing-label">Latest</p>
-          <p class="release-landing-version"><strong>v0.2.1</strong> <time datetime="2026-05-15">May 15, 2026</time></p>
-          <p class="release-landing-summary">Search file names across the whole workspace, crisp diagrams in expand and gallery, plus v0.2.0 search, TOC links, and Find (⌘F).</p>
+          <p class="release-landing-version"><strong>v0.3.0</strong> <time datetime="2026-05-17">May 17, 2026</time></p>
+          <p class="release-landing-summary">In-app Markdown editor with live preview, macOS Open With for <code>.md</code> files, plus workspace search and crisp Mermaid diagrams.</p>
           <p class="release-landing-actions">
-            <a class="btn btn-primary" href="release-notes.html#v0-2-1">Release notes (v0.2.1)</a>
+            <a class="btn btn-primary" href="release-notes.html#v0-3-0">Release notes (v0.3.0)</a>
           </p>
         </div>
       </div>

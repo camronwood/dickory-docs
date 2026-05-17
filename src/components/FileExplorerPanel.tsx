@@ -4,6 +4,7 @@ import type { FileNode } from "../stores/fileExplorerStore";
 import { formatSearchResultPath } from "../utils/workspaceFileSearch";
 import { open } from "@tauri-apps/api/dialog";
 import { invoke } from "@tauri-apps/api/tauri";
+import { useMarkdownEditorStore } from "../stores/markdownEditorStore";
 
 export interface FileExplorerPanelProps {
   onSelectMarkdown?: (workspaceId: string, path: string) => void;
@@ -320,6 +321,14 @@ export function FileExplorerPanel({
       if (activeWorkspace) {
         try {
           if (isMarkdownPath(file.path, file.name)) {
+            const rel = file.path.replace(/^\/+/, "");
+            const fileContent = await invoke<string>("read_file_text", {
+              root: activeWorkspace.path,
+              relativePath: rel,
+            });
+            useMarkdownEditorStore
+              .getState()
+              .openMarkdown(activeWorkspace.id, activeWorkspace.path, rel, fileContent);
             onSelectMarkdown?.(activeWorkspace.id, file.path);
           } else {
             const content = await invoke<string>("read_file_text", {
