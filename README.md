@@ -56,7 +56,7 @@ Or: `make build-release` on macOS after [Tauri prerequisites](https://v1.tauri.a
 
 ## Screenshots
 
-Add images to [`assets/screenshots/`](assets/screenshots/) — ideally a doc with **multiple rendered Mermaid diagrams**.
+See [`assets/screenshots/`](assets/screenshots/) — split editor, preview-only mode, and diagram gallery captures. The [marketing site](https://camronwood.github.io/dickory-docs/) uses the same images.
 
 ## Docs
 

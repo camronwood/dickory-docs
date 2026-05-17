@@ -536,6 +536,17 @@ section h2 {
   height: auto;
 }
 
+.screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.screenshot-frame--compact {
+  margin: 0;
+}
+
 .screenshot-placeholder-inner {
   padding: 3rem 1.5rem;
   text-align: center;

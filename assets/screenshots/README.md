@@ -1,9 +1,12 @@
 # Screenshots
 
-Add desktop captures here for the README and [docs/index.html](../docs/index.html).
+Desktop captures for the README and [docs site](../docs/index.html).
 
-Suggested filename: `main-workspace.png` (avoid spaces in names for stable raw GitHub URLs).
+| File | Use |
+|------|-----|
+| `split-editor.png` | Split Monaco editor + live preview |
+| `preview.png` | Preview-only mode |
+| `gallery-flowchart.png` | Diagram gallery (flowchart) |
+| `gallery-architecture.png` | Diagram gallery (architecture) |
 
-After adding a file, update the landing page screenshot section to reference:
-
-`https://raw.githubusercontent.com/camronwood/dickory-docs/main/assets/screenshots/main-workspace.png`
+Site paths: `docs/assets/screenshots/` (same filenames).
