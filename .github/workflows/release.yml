@@ -77,10 +77,12 @@ jobs:
 
             | Platform | File |
             |----------|------|
-            | **macOS (Apple Silicon)** | `.dmg` with `aarch64` in the name |
-            | **macOS (Intel)** | `.dmg` with `x64` or `x86_64` in the name |
+            | **macOS** (`uname -m` → `arm64`) | `*_aarch64.dmg` (Apple Silicon, native) |
+            | **macOS** (`uname -m` → `x86_64`) | `*_x64.dmg` (Intel) |
             | **Windows** | `.msi` installer (or `.exe` setup) |
             | **Linux** | `.AppImage` and/or `.deb` |
+
+            On Apple Silicon, if the `aarch64` build misbehaves, use `*_x64.dmg` (runs under Rosetta).
 
             **macOS:** If macOS blocks the app (unsigned build), right-click the app → **Open**, or allow it in **System Settings → Privacy & Security**.
 

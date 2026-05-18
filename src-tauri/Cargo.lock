@@ -569,10 +569,12 @@ dependencies = [
 
 [[package]]
 name = "dickory-docs"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "chrono",
+ "cocoa",
  "dirs",
+ "objc",
  "regex",
  "serde",
  "serde_json",

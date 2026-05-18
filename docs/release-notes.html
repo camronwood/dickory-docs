@@ -39,6 +39,7 @@
 
     <nav class="release-jump" aria-label="Jump to version">
       <span class="release-jump-label">Jump:</span>
+      <a href="#v0-3-1">v0.3.1</a>
       <a href="#v0-3-0">v0.3.0</a>
       <a href="#v0-2-1">v0.2.1</a>
       <a href="#v0-2-0">v0.2.0</a>
@@ -46,6 +47,19 @@
     </nav>
 
     <article class="feature-prose">
+      <h2 id="v0-3-1" class="release-version-heading">v0.3.1 <span class="release-date">· May 18, 2026</span></h2>
+      <p>Fixes macOS Finder <strong>Open With</strong> for <code>.md</code> files and clarifies which installer to download.</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li><strong>Open With (macOS)</strong> — Tao 0.16 did not handle document-open delegate methods; Dickory Docs now accepts files from Finder and routes them to the existing external-open flow.</li>
+        <li><strong>UTI coverage</strong> — <code>public.markdown</code> added to declared content types.</li>
+      </ul>
+      <h3>Install</h3>
+      <ul>
+        <li>Pick the macOS <code>.dmg</code> matching <code>uname -m</code>: <code>arm64</code> → <code>*_aarch64</code>, <code>x86_64</code> → <code>*_x64</code>. Apple Silicon can use the <code>x64</code> build under Rosetta if needed.</li>
+        <li>Tagged <code>v0.3.1</code> builds for macOS (Apple Silicon + Intel), Windows, and Linux via GitHub Actions.</li>
+      </ul>
+
       <h2 id="v0-3-0" class="release-version-heading">v0.3.0 <span class="release-date">· May 17, 2026</span></h2>
       <p>Markdown editing and macOS Open With — open <code>.md</code> files from Finder without adding a workspace first.</p>
       <h3>Desktop</h3>

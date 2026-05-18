@@ -1,6 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(target_os = "macos")]
+mod macos_open;
+
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -10,7 +13,9 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Mutex;
 use tauri::api::cli::{ArgData, Matches};
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
+
+pub const EXTERNAL_OPEN_FILES_EVENT: &str = "external-open-files";
 use walkdir::WalkDir;
 
 struct LaunchState(Mutex<Option<Vec<String>>>);
@@ -470,6 +475,48 @@ fn dedupe_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
     out
 }
 
+fn dedupe_path_strings(paths: Vec<String>) -> Vec<String> {
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for p in paths {
+        let key = PathBuf::from(&p)
+            .canonicalize()
+            .unwrap_or_else(|_| PathBuf::from(&p));
+        if seen.insert(key) {
+            out.push(p);
+        }
+    }
+    out
+}
+
+fn paths_to_open_strings(paths: Vec<PathBuf>) -> Vec<String> {
+    dedupe_paths(paths)
+        .into_iter()
+        .filter(|p| is_markdown_file(p))
+        .filter_map(|p| p.canonicalize().ok())
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect()
+}
+
+fn merge_launch_open_files(state: &LaunchState, new_paths: Vec<String>) {
+    let mut guard = state.0.lock().expect("launch state lock");
+    let mut merged = guard.take().unwrap_or_default();
+    merged.extend(new_paths);
+    *guard = Some(dedupe_path_strings(merged));
+}
+
+/// Finder Open With, `open -a`, and other macOS document-delivery paths.
+pub(crate) fn ingest_opened_paths(app: &AppHandle, raw: Vec<PathBuf>) {
+    let paths = paths_to_open_strings(raw);
+    if paths.is_empty() {
+        return;
+    }
+    if let Some(state) = app.try_state::<LaunchState>() {
+        merge_launch_open_files(&state, paths.clone());
+    }
+    let _ = app.emit_all(EXTERNAL_OPEN_FILES_EVENT, paths);
+}
+
 fn collect_launch_paths(cli_matches: Option<&Matches>) -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
@@ -594,13 +641,10 @@ fn main() {
         .setup(|app| {
             let handle = app.handle();
             let cli_matches = app.get_cli_matches().ok();
-            let paths = collect_launch_paths(cli_matches.as_ref());
-            let paths: Vec<String> = paths
-                .into_iter()
-                .filter_map(|p| p.canonicalize().ok())
-                .map(|p| p.to_string_lossy().into_owned())
-                .collect();
+            let paths = paths_to_open_strings(collect_launch_paths(cli_matches.as_ref()));
             handle.manage(LaunchState(Mutex::new(Some(paths))));
+            #[cfg(target_os = "macos")]
+            macos_open::install(handle);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

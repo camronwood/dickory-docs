@@ -21,7 +21,18 @@ make start-all
 
 Vite dev server runs on port **5177**; Tauri opens the desktop window.
 
-**Install (download):** [GitHub Releases](https://github.com/camronwood/dickory-docs/releases) — pick the `.dmg` (macOS), `.msi` (Windows), or `.AppImage` / `.deb` (Linux) for your machine. macOS builds are unsigned; use **Right-click → Open** the first time if Gatekeeper warns.
+**Install (download):** [GitHub Releases](https://github.com/camronwood/dickory-docs/releases) — pick the `.dmg` (macOS), `.msi` (Windows), or `.AppImage` / `.deb` (Linux) for your machine.
+
+**macOS — which `.dmg`?** Run `uname -m` in Terminal:
+
+| `uname -m` | Download |
+|------------|----------|
+| `arm64` | `*_aarch64.dmg` (native Apple Silicon) |
+| `x86_64` | `*_x64.dmg` (Intel Mac) |
+
+If you are on Apple Silicon (`arm64`) and the native build misbehaves, try `*_x64.dmg` instead — it runs under Rosetta.
+
+macOS builds are unsigned; use **Right-click → Open** the first time if Gatekeeper warns.
 
 **Build installers locally:**
 

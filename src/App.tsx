@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 import { FileExplorerPanel } from "./components/FileExplorerPanel";
 import { MarkdownPreview } from "./components/MarkdownPreview";
@@ -104,6 +105,17 @@ export default function App() {
     setSelection({ kind: "markdown", workspaceId, path });
   }, []);
 
+  const openAbsoluteMarkdownPaths = useCallback(
+    async (paths: string[]) => {
+      if (paths.length === 0) return;
+      await loadWorkspaces();
+      for (const absPath of paths) {
+        await openExternalMarkdownFile(absPath, selectMarkdown);
+      }
+    },
+    [loadWorkspaces, selectMarkdown]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -111,14 +123,7 @@ export default function App() {
       try {
         const paths = await invoke<string[]>("take_launch_open_files");
         if (cancelled || paths.length === 0) return;
-
-        await loadWorkspaces();
-        if (cancelled) return;
-
-        for (const absPath of paths) {
-          if (cancelled) break;
-          await openExternalMarkdownFile(absPath, selectMarkdown);
-        }
+        await openAbsoluteMarkdownPaths(paths);
       } catch (err) {
         console.error("Failed to open launch file(s):", err);
       }
@@ -127,7 +132,23 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [loadWorkspaces, selectMarkdown]);
+  }, [openAbsoluteMarkdownPaths]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    void listen<string[]>("external-open-files", (event) => {
+      void openAbsoluteMarkdownPaths(event.payload).catch((err) => {
+        console.error("Failed to open file(s) from Finder:", err);
+      });
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, [openAbsoluteMarkdownPaths]);
 
   const selectTextFile = useCallback(
     (workspaceId: string, path: string, content: string) => {
