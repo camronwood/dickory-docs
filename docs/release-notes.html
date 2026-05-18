@@ -14,6 +14,14 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="dev-banner" role="status">
+    <div class="wrap dev-banner-inner">
+      <strong>Latest: v0.3.1</strong>
+      <span>macOS Finder <strong>Open With</strong> for Markdown · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/open-with-mac.html">Install guide</a></span>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="wrap">
       <a class="logo" href="index.html" aria-label="Dickory Docs home">
@@ -65,7 +73,7 @@
       <h3>Desktop</h3>
       <ul>
         <li><strong>Markdown editor</strong> — split-pane Monaco editor with live preview, save to disk, unsaved-change prompts, and optional editor pane hide.</li>
-        <li><strong>Open With (macOS)</strong> — register as a Markdown viewer; Finder passes <code>.md</code> / <code>.markdown</code> files on launch (adds parent folder as workspace when needed).</li>
+        <li><strong>Open With (macOS)</strong> — registered as a Markdown viewer in <code>Info.plist</code> (Finder handoff was broken until <a href="#v0-3-1">v0.3.1</a>).</li>
         <li><strong>Internal Markdown links</strong> — click relative <code>.md</code> links in preview to open sibling docs in the workspace.</li>
       </ul>
       <h3>Install</h3>

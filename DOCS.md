@@ -12,6 +12,7 @@ Start with the [README](README.md) (overview, quick start, stack).
 | Workspaces | [docs/features/workspaces.html](docs/features/workspaces.html) |
 | Markdown & Mermaid | [docs/features/markdown-and-mermaid.html](docs/features/markdown-and-mermaid.html) |
 | File explorer | [docs/features/file-explorer.html](docs/features/file-explorer.html) |
+| Open With (macOS) | [docs/features/open-with-mac.html](docs/features/open-with-mac.html) |
 
 **Deploy:** Repository **Settings → Pages →** branch `main`, folder `/docs`.
 

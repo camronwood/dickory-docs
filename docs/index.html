@@ -6,7 +6,7 @@
   <title>Dickory Docs — A Mermaid diagram viewer that actually works</title>
   <meta name="description" content="Dickory Docs — native desktop app built for viewing Mermaid diagrams in local Markdown: inline SVG, full-screen expand, multi-folder workspaces. No paste-into-a-website required." />
   <meta property="og:title" content="Dickory Docs — A Mermaid diagram viewer that actually works" />
-  <meta property="og:description" content="Couldn't find a good Mermaid viewer? Open your repo, render fenced blocks as SVG, expand complex diagrams — local-first, open source." />
+  <meta property="og:description" content="v0.3.1 — Mermaid in local Markdown, macOS Open With fixed, native desktop app. Download for Apple Silicon, Intel, Windows, and Linux." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://camronwood.github.io/dickory-docs/assets/icon/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -23,8 +23,8 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>v0.3.1 available</strong>
-      <span><a href="https://github.com/camronwood/dickory-docs/releases/latest">Download installers</a> for macOS, Windows, and Linux — or <span class="dev-banner-highlight">build from source</span>. Feedback and <a href="https://github.com/camronwood/dickory-docs/pulls">pull requests</a> welcome.</span>
+      <strong>v0.3.1 — Open With fixed on macOS</strong>
+      <span><a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/open-with-mac.html">macOS install guide</a> · <a href="release-notes.html#v0-3-1">Release notes</a></span>
     </div>
   </div>
 
@@ -36,7 +36,8 @@
       </a>
       <nav class="nav-actions" aria-label="Primary">
         <a class="btn btn-ghost" href="features/index.html">Feature guides</a>
-        <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a>
+        <a class="btn btn-ghost" href="#download">Download</a>
+        <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/releases/latest">Releases</a>
         <a class="btn btn-ghost" href="release-notes.html">Release notes</a>
         <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/blob/main/README.md">README</a>
         <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">Star on GitHub</a>
@@ -64,7 +65,7 @@
     <section class="latest-feature" id="why-mermaid" aria-labelledby="why-mermaid-heading">
       <div class="wrap latest-feature-inner">
         <div class="latest-feature-copy">
-          <p class="latest-feature-kicker">The reason this app exists</p>
+          <p class="latest-feature-kicker">v0.3.1 · The reason this app exists</p>
           <h2 id="why-mermaid-heading">You shouldn't need a hack to see your diagrams</h2>
           <p class="latest-feature-lead">Most tools either skip Mermaid, render it wrong, or make you paste into a browser tab. Dickory Docs treats diagrams as first-class: open the Markdown file from your repo, and <strong>sequence, flow, ER, and architecture charts</strong> show up where the author put them — not as raw code fences.</p>
           <ul class="feature-list feature-list--tight latest-feature-list">
@@ -98,6 +99,8 @@
         <span><strong>Search</strong> files &amp; in-doc (⌘F)</span>
         <span aria-hidden="true">·</span>
         <span><strong>Edit</strong> Markdown + preview</span>
+        <span aria-hidden="true">·</span>
+        <span><strong>Open With</strong> macOS Finder</span>
       </div>
     </div>
 
@@ -147,8 +150,9 @@
           </article>
           <article class="card">
             <div class="card-icon" aria-hidden="true">📂</div>
-            <h3>Open With</h3>
-            <p>Register as a <strong>Markdown viewer</strong> on macOS — right-click <code>.md</code> files in Finder and open them directly in Dickory Docs.</p>
+            <h3>Open With (macOS)</h3>
+            <p>Right-click <code>.md</code> files in Finder and open them in Dickory Docs — fixed in <strong>v0.3.1</strong>. Adds the parent folder as a workspace when needed.</p>
+            <p class="card-cta"><a class="card-link" href="features/open-with-mac.html">macOS guide →</a></p>
           </article>
           <article class="card">
             <div class="card-icon" aria-hidden="true">⚡</div>
@@ -233,7 +237,6 @@
               <li>Surrounding Markdown still renders — context stays with the chart.</li>
             </ul>
           </div>
-          </div>
         </div>
         <div class="workflow-block" style="margin-top: 1.5rem;">
           <h3 class="workflow-title">3. Navigate long docs</h3>
@@ -243,6 +246,46 @@
             <li>Open the <strong>diagram gallery</strong> to browse every Mermaid block in the workspace or file.</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <section class="section-alt" id="download" aria-labelledby="download-heading">
+      <div class="wrap">
+        <h2 id="download-heading">Download &amp; install</h2>
+        <p class="section-intro">Latest build: <strong>v0.3.1</strong> on <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> — macOS <code>.dmg</code>, Windows <code>.msi</code>, Linux <code>.AppImage</code> / <code>.deb</code>.</p>
+        <div class="install-table-wrap" role="region" aria-label="Choose your installer">
+          <table class="install-table">
+            <thead>
+              <tr>
+                <th scope="col">Platform</th>
+                <th scope="col">File</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>macOS · <code>uname -m</code> → <code>arm64</code></td>
+                <td><code>*_aarch64.dmg</code> (Apple Silicon, native)</td>
+              </tr>
+              <tr>
+                <td>macOS · <code>uname -m</code> → <code>x86_64</code></td>
+                <td><code>*_x64.dmg</code> (Intel, or Rosetta on Apple Silicon)</td>
+              </tr>
+              <tr>
+                <td>Windows</td>
+                <td><code>.msi</code> or setup <code>.exe</code></td>
+              </tr>
+              <tr>
+                <td>Linux</td>
+                <td><code>.AppImage</code> and/or <code>.deb</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="install-footnote">macOS builds are unsigned — first launch: <strong>right-click → Open</strong>. For Finder <strong>Open With</strong>, see the <a href="features/open-with-mac.html">macOS guide</a>.</p>
+        <p style="margin-top: 1.25rem;">
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Download v0.3.1</a>
+          <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs#quick-start" style="margin-left: 0.5rem;">Build from source</a>
+        </p>
       </div>
     </section>
 
@@ -265,8 +308,8 @@
       <div class="wrap">
         <div class="cta-band">
           <h2 id="cta-heading">Download Dickory Docs</h2>
-          <p>Install from <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> (macOS .dmg, Windows .msi, Linux .AppImage/.deb). On macOS, run <code style="background:var(--bg-deep);padding:0.2em 0.45em;border-radius:6px;font-size:0.9em;">uname -m</code>: <code>arm64</code> → <code>*_aarch64.dmg</code>; <code>x86_64</code> → <code>*_x64.dmg</code>. Apple Silicon users can use the <code>x64</code> build under Rosetta if needed. Prefer source? Clone the repo and run <code style="background:var(--bg-deep);padding:0.2em 0.45em;border-radius:6px;font-size:0.9em;">make start-all</code>. <a href="https://github.com/camronwood/dickory-docs/issues">File issues</a> or <a href="https://github.com/camronwood/dickory-docs/pulls">open a pull request</a> if you improve something.</p>
-          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Get the latest release</a>
+          <p>Install <strong>v0.3.1</strong> from <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> or see the <a href="#download">install table</a> above. <a href="https://github.com/camronwood/dickory-docs/issues">File issues</a> or <a href="https://github.com/camronwood/dickory-docs/pulls">open a pull request</a> if you improve something.</p>
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Get v0.3.1</a>
         </div>
       </div>
     </section>

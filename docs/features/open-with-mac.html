@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open With on macOS — Dickory Docs</title>
+  <meta name="description" content="Open Markdown files from Finder with Dickory Docs on macOS — Open With, DMG selection for Apple Silicon and Intel, and Gatekeeper tips." />
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/icon/favicon-32.png" />
+  <link rel="apple-touch-icon" href="../assets/icon/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/landing.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="dev-banner" role="status">
+    <div class="wrap dev-banner-inner">
+      <strong>v0.3.1</strong>
+      <span>Finder <strong>Open With</strong> for <code>.md</code> files is fixed. <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="../release-notes.html#v0-3-1">What changed</a></span>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="../index.html" aria-label="Dickory Docs home">
+        <span class="logo-mark" aria-hidden="true"><img src="../assets/icon/favicon-32.png" alt="" width="32" height="32" decoding="async" /></span>
+        Dickory Docs
+      </a>
+      <nav class="nav-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="index.html">All features</a>
+        <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a>
+        <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap feature-deep" style="padding-top: clamp(2rem, 5vw, 3rem);">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> · <a href="index.html">Features</a> · Open With (macOS)
+    </nav>
+    <header class="feature-deep-hero">
+      <h1>Open With on macOS</h1>
+      <p class="feature-deep-lead">Right-click any <code>.md</code> or <code>.markdown</code> file in Finder and open it directly in Dickory Docs — the app adds the file’s parent folder as a workspace when needed.</p>
+    </header>
+
+    <article class="feature-prose">
+      <h2>Download the right build</h2>
+      <p>Installers are on <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a>. On macOS, pick the <code>.dmg</code> that matches your CPU:</p>
+      <div class="install-table-wrap" role="region" aria-label="macOS installer selection">
+        <table class="install-table">
+          <thead>
+            <tr>
+              <th scope="col">Check</th>
+              <th scope="col">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>uname -m</code> prints <code>arm64</code> (Apple Silicon)</td>
+              <td><code>Dickory.Docs_*_aarch64.dmg</code></td>
+            </tr>
+            <tr>
+              <td><code>uname -m</code> prints <code>x86_64</code> (Intel Mac)</td>
+              <td><code>Dickory.Docs_*_x64.dmg</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Run in Terminal:</p>
+      <pre><code>uname -m</code></pre>
+      <p>On Apple Silicon, if the native <code>aarch64</code> build misbehaves, try the <code>x64</code> DMG — it runs under Rosetta.</p>
+
+      <h2>First launch (unsigned build)</h2>
+      <p>CI builds are not notarized. If macOS blocks the app:</p>
+      <ul>
+        <li><strong>Right-click</strong> Dickory Docs in Applications → <strong>Open</strong>, or</li>
+        <li>Allow it in <strong>System Settings → Privacy &amp; Security</strong>.</li>
+      </ul>
+
+      <h2>Use Open With</h2>
+      <ol>
+        <li>Install Dickory Docs from the DMG into <strong>Applications</strong>.</li>
+        <li>In Finder, right-click a Markdown file (e.g. <code>README.md</code>).</li>
+        <li>Choose <strong>Open With</strong> → <strong>Dickory Docs</strong>.</li>
+      </ol>
+      <p>If Dickory Docs is not listed, choose <strong>Other…</strong>, select the app in Applications, and click <strong>Open</strong>.</p>
+      <p>The app opens the file in split editor + preview (or preview-only if you hid the editor). If the folder is not already a workspace, Dickory Docs adds the parent directory automatically.</p>
+
+      <h2>v0.3.1 fix</h2>
+      <p>v0.3.0 registered Markdown types in <code>Info.plist</code> but could not accept files from Finder because the underlying window layer (Tao 0.16) did not implement document-open delegate methods. <strong>v0.3.1</strong> adds those handlers so Open With works as intended.</p>
+
+      <aside class="repo-links">
+        <h2>Related</h2>
+        <ul>
+          <li><a href="workspaces.html">Workspaces</a> — how folder roots persist.</li>
+          <li><a href="markdown-and-mermaid.html">Mermaid viewer</a> — what you see after the file opens.</li>
+          <li><a href="../release-notes.html#v0-3-1">Release notes (v0.3.1)</a></li>
+        </ul>
+      </aside>
+    </article>
+
+    <nav class="feature-nav" aria-labelledby="related-features">
+      <h2 id="related-features">More guides</h2>
+      <div class="feature-nav-grid">
+        <a href="open-with-mac.html" aria-current="page">Open With (macOS) <span>Finder · v0.3.1+</span></a>
+        <a href="markdown-and-mermaid.html">Mermaid viewer</a>
+        <a href="workspaces.html">Workspaces</a>
+        <a href="file-explorer.html">File explorer</a>
+      </div>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>
+        <a href="../index.html">Dickory Docs</a>
+        — <a href="https://github.com/camronwood/dickory-docs">open source</a> · <a href="../release-notes.html">v0.3.1</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
