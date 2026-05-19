@@ -1,0 +1,7 @@
+%%{init: {'theme': 'dark'}}%%
+graph LR
+    A([Start]) --> B[Load Env Vars<br/>& Init Clients]
+    B --> C[Spawn Axum Server]
+    C --> D{tokio::select!}
+    D --> E[Cleanup]
+    E --> F([Exit])

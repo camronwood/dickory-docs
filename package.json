@@ -1,7 +1,7 @@
 {
   "name": "dickory-docs",
   "private": true,
-  "version": "0.3.5",
+  "version": "0.3.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "tauri:build:debug": "tauri build --debug --features custom-protocol",
     "icons": "(test -d .venv-icon || (python3 -m venv .venv-icon && .venv-icon/bin/pip install -q Pillow numpy)) && .venv-icon/bin/python scripts/knock_out_background.py assets/source-app-icon.png -o app-icon-source.png --bg ${ICON_BG:-light} && npx @tauri-apps/cli icon app-icon-source.png && cp src-tauri/icons/32x32.png public/favicon.png && mkdir -p docs/assets/icon && cp app-icon-source.png docs/assets/icon/og-image.png && cp src-tauri/icons/32x32.png docs/assets/icon/favicon-32.png && cp src-tauri/icons/128x128@2x.png docs/assets/icon/apple-touch-icon.png && cp src-tauri/icons/128x128.png docs/assets/icon/logo-128.png",
     "icons:dark": "ICON_BG=dark npm run icons",
-    "test": "node scripts/test_markdown_fence_regex.mjs && node scripts/test_mermaid_layouts.mjs",
+    "test": "node --experimental-strip-types scripts/test_markdown_fence_regex.mts && node scripts/test_mermaid_layouts.mjs",
     "test:mermaid": "node scripts/test_mermaid_layouts.mjs"
   },
   "dependencies": {

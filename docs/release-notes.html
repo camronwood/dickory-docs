@@ -17,7 +17,7 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>Latest: v0.3.2</strong>
+      <strong>Latest: v0.3.6</strong>
       <span><strong>ELK</strong> &amp; tidy-tree Mermaid layouts · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/markdown-and-mermaid.html">Layout guide</a></span>
     </div>
   </div>
@@ -47,6 +47,7 @@
 
     <nav class="release-jump" aria-label="Jump to version">
       <span class="release-jump-label">Jump:</span>
+      <a href="#v0-3-6">v0.3.6</a>
       <a href="#v0-3-4">v0.3.4</a>
       <a href="#v0-3-3">v0.3.3</a>
       <a href="#v0-3-2">v0.3.2</a>
@@ -58,6 +59,14 @@
     </nav>
 
     <article class="feature-prose">
+      <h2 id="v0-3-6" class="release-version-heading">v0.3.6 <span class="release-date">· May 19, 2026</span></h2>
+      <p>Broader Mermaid detection for real-world docs (untagged fences and <code>.mmd</code> files).</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li><strong>Untagged fences</strong> — plain <code>```</code> blocks whose body starts with <code>graph</code>, <code>flowchart</code>, <code>%%{init</code>, etc. render and appear in the diagram gallery (code-language fences like <code>python</code> are unchanged).</li>
+        <li><strong><code>.mmd</code> files</strong> — standalone Mermaid files open in the editor/preview and scan as one diagram per file.</li>
+      </ul>
+
       <h2 id="v0-3-4" class="release-version-heading">v0.3.4 <span class="release-date">· May 19, 2026</span></h2>
       <p>Fixes Linux ARM64 CI (force IPv4 for apt on <code>ubuntu-22.04-arm</code> runners).</p>
       <h3>Install</h3>

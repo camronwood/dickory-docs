@@ -168,7 +168,10 @@ export function MarkdownPreviewBody({
 }: MarkdownPreviewBodyProps) {
   const markdownContentRef = useRef<HTMLDivElement>(null);
 
-  const segments = useMemo(() => splitMarkdownAndMermaid(content), [content]);
+  const segments = useMemo(
+    () => splitMarkdownAndMermaid(content, filePath),
+    [content, filePath]
+  );
 
   useEffect(() => {
     const root = markdownContentRef.current;

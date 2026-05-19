@@ -27,25 +27,25 @@ export function galleryEmptyMessage(
     return {
       title: "No Mermaid diagrams in this file",
       detail:
-        "Use a fenced block: ```mermaid then your diagram, then closing ```. Dickory Docs only scans Markdown (.md, .markdown, .mdx).",
+        "Use ```mermaid, an untagged ``` block whose body starts with graph/flowchart/etc., or a .mmd file. Supported: .md, .markdown, .mdx, .mmd.",
     };
   }
   if (stats.markdownFiles === 0) {
     return {
       title: "No Markdown files in workspace",
       detail:
-        "Add a folder that contains .md, .markdown, or .mdx files with ```mermaid blocks. Plain code files (.py, .ts, etc.) are not scanned.",
+        "Add a folder with .md, .markdown, .mdx, or .mmd files containing Mermaid diagrams (```mermaid, untagged ``` blocks, or raw .mmd). Plain code files are not scanned.",
     };
   }
   if (stats.filesUnreadable > 0) {
     return {
       title: "No Mermaid diagrams found",
-      detail: `Scanned ${stats.markdownFiles} Markdown file(s), but ${stats.filesUnreadable} could not be read (permissions or symlinks outside the workspace). None of the readable files contain \`\`\`mermaid fences.`,
+      detail: `Scanned ${stats.markdownFiles} file(s), but ${stats.filesUnreadable} could not be read. None of the readable files contain detectable Mermaid (tagged \`\`\`mermaid, untagged \`\`\` diagram blocks, or .mmd).`,
     };
   }
   return {
     title: "No Mermaid diagrams found",
-    detail: `Scanned ${stats.markdownFiles} Markdown file(s); none contain \`\`\`mermaid fenced blocks.`,
+    detail: `Scanned ${stats.markdownFiles} file(s); none contain detectable Mermaid (\`\`\`mermaid, untagged \`\`\` blocks with graph/flowchart/etc., or .mmd).`,
   };
 }
 

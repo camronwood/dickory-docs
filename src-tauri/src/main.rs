@@ -328,7 +328,7 @@ fn should_skip_dir(name: &str) -> bool {
 fn markdown_extension(ext: &str) -> bool {
     matches!(
         ext.to_ascii_lowercase().as_str(),
-        "md" | "markdown" | "mdx"
+        "md" | "markdown" | "mdx" | "mmd"
     )
 }
 
@@ -339,23 +339,201 @@ fn is_markdown_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Match TS `MERMAID_FENCE_REGEX` — newline after `mermaid` is optional; closing fence may have trailing spaces.
-pub fn extract_mermaid_blocks_from_markdown(content: &str) -> Vec<String> {
+fn is_mmd_path(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("mmd"))
+}
+
+fn first_info_token(info_line: &str) -> String {
+    let trimmed = info_line.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    trimmed
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase()
+}
+
+fn is_code_fence_lang(token: &str) -> bool {
+    matches!(
+        token,
+        "python"
+            | "py"
+            | "rust"
+            | "rs"
+            | "go"
+            | "golang"
+            | "javascript"
+            | "js"
+            | "typescript"
+            | "ts"
+            | "tsx"
+            | "jsx"
+            | "bash"
+            | "sh"
+            | "shell"
+            | "zsh"
+            | "fish"
+            | "json"
+            | "yaml"
+            | "yml"
+            | "toml"
+            | "xml"
+            | "html"
+            | "htm"
+            | "css"
+            | "scss"
+            | "sass"
+            | "sql"
+            | "java"
+            | "kotlin"
+            | "kt"
+            | "swift"
+            | "ruby"
+            | "rb"
+            | "cpp"
+            | "c"
+            | "h"
+            | "hpp"
+            | "csharp"
+            | "cs"
+            | "php"
+            | "lua"
+            | "r"
+            | "dart"
+            | "scala"
+            | "perl"
+            | "pl"
+            | "dockerfile"
+            | "makefile"
+            | "cmake"
+            | "diff"
+            | "patch"
+            | "text"
+            | "txt"
+            | "plaintext"
+            | "console"
+            | "terminal"
+            | "powershell"
+            | "ps1"
+            | "objc"
+            | "objectivec"
+            | "matlab"
+            | "latex"
+            | "tex"
+            | "bibtex"
+            | "graphql"
+            | "protobuf"
+            | "proto"
+            | "wasm"
+            | "llvm"
+            | "ini"
+            | "properties"
+            | "csv"
+            | "markdown"
+            | "md"
+    )
+}
+
+fn looks_like_mermaid_diagram(body: &str) -> bool {
+    static DIAGRAM_START: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static INIT_LINE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let diagram_start = DIAGRAM_START.get_or_init(|| {
+        Regex::new(
+            r"(?i)^(graph\b|flowchart\b|sequenceDiagram\b|classDiagram\b|stateDiagram\b|erDiagram\b|journey\b|gantt\b|pie\b|gitGraph\b|mindmap\b|timeline\b|quadrantChart\b|C4Context\b|block-beta\b|xychart\b|sankey\b)",
+        )
+        .expect("diagram start regex")
+    });
+    let init_line = INIT_LINE.get_or_init(|| {
+        Regex::new(r"(?s)^\s*%%\{[\s\S]*?\}%%\s*$").expect("init directive regex")
+    });
+
+    for line in body.trim().lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if init_line.is_match(line) {
+            continue;
+        }
+        return diagram_start.is_match(line);
+    }
+    false
+}
+
+fn fence_accepts_as_mermaid(info_line: &str, body: &str) -> bool {
+    let token = first_info_token(info_line);
+    if token == "mermaid" {
+        return true;
+    }
+    if !token.is_empty() && is_code_fence_lang(&token) {
+        return false;
+    }
+    if token.is_empty() {
+        return looks_like_mermaid_diagram(body);
+    }
+    false
+}
+
+fn mermaid_body_from_fence(info_line: &str, body: &str) -> String {
+    let trimmed_body = body.trim();
+    let info = info_line.trim();
+    if first_info_token(info_line) != "mermaid" {
+        return trimmed_body.to_string();
+    }
+    let rest = if info.len() >= 7 && info[..7].eq_ignore_ascii_case("mermaid") {
+        info[7..].trim_start()
+    } else {
+        ""
+    };
+    if rest.is_empty() {
+        return trimmed_body.to_string();
+    }
+    if trimmed_body.is_empty() {
+        return rest.to_string();
+    }
+    format!("{rest}\n{trimmed_body}")
+}
+
+/// Match TS `extractMermaidBlocksFromText` in mermaidDetect.ts.
+pub fn extract_mermaid_blocks(content: &str, path: Option<&Path>) -> Vec<String> {
+    if path.is_some_and(is_mmd_path) {
+        let trimmed = content.trim();
+        if trimmed.is_empty() {
+            return vec![];
+        }
+        return vec![trimmed.to_string()];
+    }
+
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| {
-        Regex::new(r"(?is)```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*")
-            .expect("mermaid fence regex")
+        Regex::new(r"(?is)```([^\n`]*)(?:\r?\n|\r)([\s\S]*?)```\s*").expect("fence regex")
     });
+
     re.captures_iter(content)
         .filter_map(|cap| {
-            let body = cap.get(1)?.as_str().trim();
-            if body.is_empty() {
+            let info = cap.get(1)?.as_str();
+            let body = cap.get(2)?.as_str();
+            if !fence_accepts_as_mermaid(info, body) {
+                return None;
+            }
+            let combined = mermaid_body_from_fence(info, body);
+            let trimmed = combined.trim();
+            if trimmed.is_empty() {
                 None
             } else {
-                Some(body.to_string())
+                Some(trimmed.to_string())
             }
         })
         .collect()
+}
+
+/// Markdown / MDX content without a path (`.mmd` whole-file rules do not apply).
+pub fn extract_mermaid_blocks_from_markdown(content: &str) -> Vec<String> {
+    extract_mermaid_blocks(content, None)
 }
 
 #[derive(Serialize)]
@@ -421,7 +599,7 @@ fn workspace_scan_mermaid(root: String) -> Result<MermaidScanOut, String> {
             }
         };
         markdown_files += 1;
-        for (block_index, content) in extract_mermaid_blocks_from_markdown(&text)
+        for (block_index, content) in extract_mermaid_blocks(&text, Some(full))
             .into_iter()
             .enumerate()
         {
@@ -451,7 +629,10 @@ const MAX_FILE_SEARCH_RESULTS: usize = 500;
 
 fn is_markdown_name(name: &str) -> bool {
     let n = name.to_ascii_lowercase();
-    n.ends_with(".md") || n.ends_with(".markdown") || n.ends_with(".mdx")
+    n.ends_with(".md")
+        || n.ends_with(".markdown")
+        || n.ends_with(".mdx")
+        || n.ends_with(".mmd")
 }
 
 #[derive(Serialize)]
@@ -710,7 +891,8 @@ fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::extract_mermaid_blocks_from_markdown;
+    use super::{extract_mermaid_blocks, extract_mermaid_blocks_from_markdown};
+    use std::path::Path;
 
     #[test]
     fn mermaid_fence_with_newline() {
@@ -761,6 +943,30 @@ mod tests {
         assert!(blocks[2].contains("elk.stress"));
         assert!(blocks[3].contains("flowchart-elk"));
         assert!(blocks[4].contains("tidy-tree"));
+    }
+
+    #[test]
+    fn untagged_fence_with_init() {
+        let md = "```\n%%{init: {'theme': 'dark'}}%%\ngraph LR\n  A --> B\n```\n";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+        assert!(blocks[0].contains("graph LR"));
+    }
+
+    #[test]
+    fn skips_python_fence() {
+        let md = "```python\ngraph TD\n  A --> B\n```\n";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 0);
+    }
+
+    #[test]
+    fn mmd_whole_file() {
+        let content = "%%{init: {'theme': 'dark'}}%%\ngraph LR\n  A --> B\n";
+        let path = Path::new("diagrams/flow.mmd");
+        let blocks = extract_mermaid_blocks(content, Some(path));
+        assert_eq!(blocks.len(), 1);
+        assert!(blocks[0].contains("graph LR"));
     }
 }
 

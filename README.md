@@ -2,7 +2,7 @@
 
 > **A Mermaid diagram viewer that actually works** — for Markdown on your machine.
 
-Dickory Docs was built because nothing else made it easy to **view Mermaid diagrams** in local Markdown: no paste into a web playground, no broken renders in generic previewers. Open a folder, pick a `.md` file, and every fenced `mermaid` block becomes **live SVG** — inline or full-screen.
+Dickory Docs was built because nothing else made it easy to **view Mermaid diagrams** in local Markdown: no paste into a web playground, no broken renders in generic previewers. Open a folder, pick a `.md` or `.mmd` file, and Mermaid diagrams become **live SVG** — inline or full-screen. Supports `` ```mermaid `` fences, untagged `` ``` `` blocks with diagram syntax, and whole-file `.mmd` sources.
 
 Also includes Markdown preview, multi-folder workspaces, and a file explorer — all local-first (Tauri + React + Rust).
 
@@ -55,7 +55,7 @@ Or: `make build-release` on macOS after [Tauri prerequisites](https://v1.tauri.a
 
 ## Why Mermaid first
 
-- **Inline SVG** — fenced `mermaid` blocks render in the preview pane, not as raw code.
+- **Inline SVG** — `mermaid`-tagged fences, untagged diagram fences, and `.mmd` files render in the preview pane, not as raw code.
 - **Expand to modal** — dense flowcharts and sequence diagrams get a full-screen view.
 - **Retry on errors** — bad syntax surfaces clearly instead of failing silently.
 - **Local files** — diagrams never leave your machine; point at any folder on disk.

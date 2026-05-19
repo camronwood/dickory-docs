@@ -1,6 +1,7 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import GithubSlugger from "github-slugger";
+import { extractMermaidBlocksFromText } from "./mermaidDetect";
 
 export interface MermaidBlock {
   type: "mermaid";
@@ -59,35 +60,24 @@ export function renderMarkdown(
   return html;
 }
 
-export function parseMarkdownWithMermaid(content: string): MarkdownParseResult {
-  const mermaidBlocks: MermaidBlock[] = [];
-  const mermaidRegex = /```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*/gi;
-  const matches: Array<{ fullMatch: string; content: string; index: number }> = [];
-
-  let match;
-  while ((match = mermaidRegex.exec(content)) !== null) {
-    const mermaidContent = match[1].trim();
-    if (mermaidContent.length > 0) {
-      matches.push({
-        fullMatch: match[0],
-        content: mermaidContent,
-        index: match.index,
-      });
-    }
-  }
+export function parseMarkdownWithMermaid(
+  content: string,
+  filePath?: string
+): MarkdownParseResult {
+  const spans = extractMermaidBlocksFromText(content, filePath);
+  const mermaidBlocks: MermaidBlock[] = spans.map((s) => ({
+    type: "mermaid",
+    content: s.content,
+  }));
 
   let processedContent = content;
-  matches.sort((a, b) => b.index - a.index);
+  const sorted = [...spans].sort((a, b) => b.start - a.start);
 
-  matches.forEach((matchInfo, arrayIndex) => {
-    const blockIndex = matches.length - 1 - arrayIndex;
-    mermaidBlocks.unshift({
-      type: "mermaid",
-      content: matchInfo.content,
-    });
+  sorted.forEach((span, arrayIndex) => {
+    const blockIndex = spans.length - 1 - arrayIndex;
     const placeholder = `<div data-mermaid-placeholder="${blockIndex}"></div>`;
-    const before = processedContent.substring(0, matchInfo.index);
-    const after = processedContent.substring(matchInfo.index + matchInfo.fullMatch.length);
+    const before = processedContent.substring(0, span.start);
+    const after = processedContent.substring(span.end);
     processedContent = before + placeholder + after;
   });
 
@@ -104,8 +94,7 @@ export type MarkdownSegment =
   | { type: "markdown"; content: string }
   | { type: "mermaid"; content: string };
 
-/** Matches ```mermaid fences — keep in sync with Rust `extract_mermaid_blocks_from_markdown`. */
-export const MERMAID_FENCE_REGEX = /```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*/gi;
+export { MERMAID_FENCE_REGEX } from "./mermaidDetect";
 
 export type MermaidBlockRef = {
   filePath: string;
@@ -117,41 +106,32 @@ export function extractMermaidBlocks(
   raw: string,
   filePath: string
 ): MermaidBlockRef[] {
-  const blocks: MermaidBlockRef[] = [];
-  const re = new RegExp(MERMAID_FENCE_REGEX.source, MERMAID_FENCE_REGEX.flags);
-  let match: RegExpExecArray | null;
-  let blockIndex = 0;
-
-  while ((match = re.exec(raw)) !== null) {
-    const mermaidContent = match[1].trim();
-    if (mermaidContent.length > 0) {
-      blocks.push({
-        filePath,
-        blockIndex,
-        content: mermaidContent,
-      });
-      blockIndex += 1;
-    }
-  }
-
-  return blocks;
+  return extractMermaidBlocksFromText(raw, filePath).map((span, blockIndex) => ({
+    filePath,
+    blockIndex,
+    content: span.content,
+  }));
 }
 
-export function splitMarkdownAndMermaid(raw: string): MarkdownSegment[] {
-  const mermaidRegex = new RegExp(MERMAID_FENCE_REGEX.source, MERMAID_FENCE_REGEX.flags);
+export function splitMarkdownAndMermaid(
+  raw: string,
+  filePath?: string
+): MarkdownSegment[] {
+  const spans = extractMermaidBlocksFromText(raw, filePath);
+  if (spans.length === 0) {
+    if (raw.length === 0) return [];
+    return [{ type: "markdown", content: raw }];
+  }
+
   const segments: MarkdownSegment[] = [];
   let cursor = 0;
-  let match: RegExpExecArray | null;
 
-  while ((match = mermaidRegex.exec(raw)) !== null) {
-    if (match.index > cursor) {
-      segments.push({ type: "markdown", content: raw.slice(cursor, match.index) });
+  for (const span of spans) {
+    if (span.start > cursor) {
+      segments.push({ type: "markdown", content: raw.slice(cursor, span.start) });
     }
-    const mermaidContent = match[1].trim();
-    if (mermaidContent.length > 0) {
-      segments.push({ type: "mermaid", content: mermaidContent });
-    }
-    cursor = match.index + match[0].length;
+    segments.push({ type: "mermaid", content: span.content });
+    cursor = span.end;
   }
 
   if (cursor < raw.length) {

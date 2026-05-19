@@ -37,7 +37,12 @@ function isDirectoryNode(node: FileNode): boolean {
 function isMarkdownPath(path: string, basename?: string): boolean {
   const endsMd = (s: string) => {
     const n = normalizeFsPath(s).toLowerCase();
-    return n.endsWith(".md") || n.endsWith(".markdown") || n.endsWith(".mdx");
+    return (
+      n.endsWith(".md") ||
+      n.endsWith(".markdown") ||
+      n.endsWith(".mdx") ||
+      n.endsWith(".mmd")
+    );
   };
   if (path && endsMd(path)) return true;
   if (basename && endsMd(basename)) return true;
@@ -722,7 +727,7 @@ export function FileExplorerPanel({
             onChange={(e) => onMarkdownOnlyChange(e.target.checked)}
             className="rounded border-slack-border bg-slack-bg text-slack-accent focus:ring-slack-accent"
           />
-          <span title="Show only .md and .markdown files (folders stay if they contain matches)">
+          <span title="Show only .md, .markdown, .mdx, and .mmd files (folders stay if they contain matches)">
             Markdown files only
           </span>
         </label>
