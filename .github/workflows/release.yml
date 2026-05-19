@@ -56,10 +56,22 @@ jobs:
       - name: Install Linux dependencies
         if: matrix.install_linux_deps == true
         run: |
-          # ARM runners often cannot reach ports.ubuntu.com over IPv6.
+          set -eux
           echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80retries
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+            [ -f "$f" ] || continue
+            sudo sed -i \
+              -e 's|http://ports.ubuntu.com/ubuntu-ports|https://ports.ubuntu.com/ubuntu-ports|g' \
+              -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+              -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
+              "$f"
+          done
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
           sudo apt-get update
-          sudo apt-get install -y \
+          # --no-install-recommends avoids broken gstreamer plugin pulls on ARM mirrors.
+          sudo apt-get install -y --no-install-recommends \
             libgtk-3-dev \
             libwebkit2gtk-4.0-dev \
             libappindicator3-dev \
