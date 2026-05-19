@@ -53,6 +53,25 @@
       <h2>Diagram types you can view</h2>
       <p>Anything Mermaid supports in your version — commonly <strong>flowcharts</strong>, <strong>sequence diagrams</strong>, <strong>class/ER diagrams</strong>, <strong>state machines</strong>, <strong>Gantt</strong> charts, and more. If it renders in Mermaid, Dickory Docs will attempt it from your fenced block.</p>
 
+      <h2>Layout engines (dagre, ELK, tidy-tree)</h2>
+      <p>Flowcharts use <strong>dagre</strong> by default (Mermaid’s built-in <code>dagre-wrapper</code>). Dickory Docs also bundles the official Mermaid 11 layout packages so opt-in layouts work from your Markdown — no paste into the live editor required.</p>
+      <ul>
+        <li><strong>ELK</strong> — layered, stress, force, and other ELK variants for dense flowcharts. Use an init directive, YAML frontmatter, or <code>flowchart-elk</code> as the diagram type.</li>
+        <li><strong>Tidy-tree</strong> — bidirectional tree layout for mindmaps (<code>layout: tidy-tree</code> in frontmatter).</li>
+        <li><strong>Dagre</strong> — default when you do not request ELK; also available explicitly via <code>defaultRenderer: dagre-wrapper</code> or <code>dagre-d3</code>.</li>
+      </ul>
+      <p>Examples inside a fenced block:</p>
+      <pre><code>%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
+flowchart TD
+  A --&gt; B</code></pre>
+      <pre><code>---
+config:
+  layout: elk.stress
+---
+flowchart TD
+  A --&gt; B</code></pre>
+      <p>Try the sample file <code>samples/mermaid-layouts.md</code> in the repo for all layout variants.</p>
+
       <h2>Markdown preview (the wrapper)</h2>
       <p>Mermaid lives inside real documents. The preview pane also extracts a document title for the window chrome (<code>{title} · Dickory Docs</code>) and tracks a content hash to skip redundant re-renders when the file has not changed.</p>
 

@@ -4,6 +4,7 @@
 
 | File | Use |
 |------|-----|
+| `dickory-docs-download-ad-1080.png` | v0.3.0 release posts — download CTA + app screenshot |
 | `dickory-docs-social-ad-1080.png` | LinkedIn, X, dev.to, README hero |
 | `dickory-docs-oss-contributors-ad-1080.png` | GitHub discussions, contributor calls |
 

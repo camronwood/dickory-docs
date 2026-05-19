@@ -2,7 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import type { MermaidBlockRef } from "../utils/markdownRenderer";
 import {
   filterBlocksByFile,
+  galleryEmptyMessage,
   preserveIndexOnScopeChange,
+  type GalleryScanStats,
   type GalleryScope,
 } from "../utils/mermaidGallery";
 import { MermaidCanvas } from "./MermaidCanvas";
@@ -16,6 +18,7 @@ export interface MermaidGalleryModalProps {
   onScopeChange: (scope: GalleryScope) => void;
   currentFilePath?: string;
   canUseFileScope: boolean;
+  scanStats?: GalleryScanStats;
   onOpenSource?: (filePath: string) => void;
 }
 
@@ -28,6 +31,7 @@ export function MermaidGalleryModal({
   onScopeChange,
   currentFilePath,
   canUseFileScope,
+  scanStats = { markdownFiles: 0, filesUnreadable: 0 },
   onOpenSource,
 }: MermaidGalleryModalProps) {
   const [index, setIndex] = useState(initialIndex);
@@ -106,6 +110,9 @@ export function MermaidGalleryModal({
 
   if (!isOpen) return null;
 
+  const emptyMessage =
+    total === 0 ? galleryEmptyMessage(scope, scanStats) : null;
+
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-black/90">
       <div className="flex-shrink-0 flex items-center justify-between gap-4 px-4 py-3 border-b border-slack-border bg-slack-bgHover">
@@ -176,15 +183,11 @@ export function MermaidGalleryModal({
       </div>
 
       <div className="flex-1 min-h-0 relative flex flex-col">
-        {total === 0 ? (
+        {total === 0 && emptyMessage ? (
           <div className="flex flex-1 items-center justify-center text-slack-textMuted p-8 text-center">
             <div>
-              <p className="text-lg mb-2">No Mermaid diagrams found</p>
-              <p className="text-sm mb-4">
-                {scope === "file"
-                  ? "This file has no ```mermaid blocks."
-                  : "No ```mermaid blocks in this workspace."}
-              </p>
+              <p className="text-lg mb-2">{emptyMessage.title}</p>
+              <p className="text-sm mb-4 max-w-md mx-auto">{emptyMessage.detail}</p>
               <button
                 type="button"
                 onClick={onClose}

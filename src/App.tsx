@@ -17,7 +17,8 @@ import {
   findGalleryIndex,
   mapScannedBlocks,
   type GalleryScope,
-  type ScannedMermaidBlock,
+  type GalleryScanStats,
+  type MermaidScanResult,
 } from "./utils/mermaidGallery";
 import { openExternalMarkdownFile } from "./utils/openExternalFile";
 
@@ -32,6 +33,7 @@ type GalleryState = {
   initialIndex: number;
   scope: GalleryScope;
   currentFilePath?: string;
+  scanStats: GalleryScanStats;
 };
 
 export type OpenGalleryOptions = {
@@ -170,10 +172,14 @@ export default function App() {
       setGalleryScanning(true);
 
       try {
-        const scanned = await invoke<ScannedMermaidBlock[]>("workspace_scan_mermaid", {
+        const scanned = await invoke<MermaidScanResult>("workspace_scan_mermaid", {
           root: workspace.path,
         });
-        const items = mapScannedBlocks(scanned);
+        const items = mapScannedBlocks(scanned.blocks);
+        const scanStats: GalleryScanStats = {
+          markdownFiles: scanned.markdown_files,
+          filesUnreadable: scanned.files_unreadable,
+        };
         const filePath = opts.currentFilePath?.replace(/^\/+/, "");
         const initialIndex =
           filePath && (opts.blockIndex !== undefined || opts.content)
@@ -189,6 +195,7 @@ export default function App() {
           initialIndex,
           scope,
           currentFilePath: filePath,
+          scanStats,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -303,6 +310,7 @@ export default function App() {
           onScopeChange={setGalleryScope}
           currentFilePath={gallery.currentFilePath ?? currentMarkdownPath}
           canUseFileScope={Boolean(gallery.currentFilePath ?? currentMarkdownPath)}
+          scanStats={gallery.scanStats}
           onOpenSource={handleGalleryOpenSource}
         />
       )}

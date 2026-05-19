@@ -1,4 +1,9 @@
 import mermaid from "mermaid";
+import elkLayouts from "@mermaid-js/layout-elk";
+import tidyTreeLayouts from "@mermaid-js/layout-tidy-tree";
+
+mermaid.registerLayoutLoaders(elkLayouts);
+mermaid.registerLayoutLoaders(tidyTreeLayouts);
 
 mermaid.initialize({
   startOnLoad: false,

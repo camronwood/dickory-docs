@@ -17,8 +17,8 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>Latest: v0.3.1</strong>
-      <span>macOS Finder <strong>Open With</strong> for Markdown · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/open-with-mac.html">Install guide</a></span>
+      <strong>Latest: v0.3.2</strong>
+      <span><strong>ELK</strong> &amp; tidy-tree Mermaid layouts · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/markdown-and-mermaid.html">Layout guide</a></span>
     </div>
   </div>
 
@@ -47,6 +47,7 @@
 
     <nav class="release-jump" aria-label="Jump to version">
       <span class="release-jump-label">Jump:</span>
+      <a href="#v0-3-2">v0.3.2</a>
       <a href="#v0-3-1">v0.3.1</a>
       <a href="#v0-3-0">v0.3.0</a>
       <a href="#v0-2-1">v0.2.1</a>
@@ -55,6 +56,22 @@
     </nav>
 
     <article class="feature-prose">
+      <h2 id="v0-3-2" class="release-version-heading">v0.3.2 <span class="release-date">· May 19, 2026</span></h2>
+      <p>Mermaid <strong>ELK</strong> and <strong>tidy-tree</strong> layout support, plus diagram gallery and preview fixes.</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li><strong>ELK layouts</strong> — <code>@mermaid-js/layout-elk</code> registered at startup. Supports <code>%%{init: … "defaultRenderer": "elk" …}%%</code>, YAML <code>layout: elk</code> / <code>elk.stress</code>, and <code>flowchart-elk</code> diagram types.</li>
+        <li><strong>Tidy-tree mindmaps</strong> — <code>@mermaid-js/layout-tidy-tree</code> for <code>layout: tidy-tree</code> in frontmatter.</li>
+        <li><strong>Mermaid preview fix</strong> — fenced-block regex used the wrong capture group; inline diagrams could fail to render.</li>
+        <li><strong>Diagram gallery</strong> — workspace scan returns markdown file counts and clearer empty-state hints; paths canonicalized on load (helps <code>~/</code> and symlinks on Linux).</li>
+        <li><strong>File explorer</strong> — <code>.mdx</code> included in Markdown-only filter.</li>
+        <li><strong>Tests</strong> — <code>npm test</code> runs fence extraction and headless layout renders; see <code>samples/mermaid-layouts.md</code>.</li>
+      </ul>
+      <h3>Install</h3>
+      <ul>
+        <li>Tagged <code>v0.3.2</code> builds for macOS (Apple Silicon + Intel), Windows, and Linux via GitHub Actions.</li>
+      </ul>
+
       <h2 id="v0-3-1" class="release-version-heading">v0.3.1 <span class="release-date">· May 18, 2026</span></h2>
       <p>Fixes macOS Finder <strong>Open With</strong> for <code>.md</code> files and clarifies which installer to download.</p>
       <h3>Desktop</h3>

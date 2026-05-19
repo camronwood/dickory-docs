@@ -37,7 +37,7 @@ function isDirectoryNode(node: FileNode): boolean {
 function isMarkdownPath(path: string, basename?: string): boolean {
   const endsMd = (s: string) => {
     const n = normalizeFsPath(s).toLowerCase();
-    return n.endsWith(".md") || n.endsWith(".markdown");
+    return n.endsWith(".md") || n.endsWith(".markdown") || n.endsWith(".mdx");
   };
   if (path && endsMd(path)) return true;
   if (basename && endsMd(basename)) return true;

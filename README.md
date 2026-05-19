@@ -61,7 +61,7 @@ Or: `make build-release` on macOS after [Tauri prerequisites](https://v1.tauri.a
 ## Stack
 
 - **Desktop:** Tauri 1.x + React + TypeScript + Tailwind
-- **Diagrams:** Mermaid 11
+- **Diagrams:** Mermaid 11 + ELK + tidy-tree layouts
 - **Markdown:** marked, DOMPurify
 - **Backend:** Rust (workspace JSON, directory walks, safe path I/O)
 

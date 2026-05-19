@@ -8,6 +8,47 @@ export interface ScannedMermaidBlock {
   content: string;
 }
 
+export interface MermaidScanResult {
+  blocks: ScannedMermaidBlock[];
+  markdown_files: number;
+  files_unreadable: number;
+}
+
+export interface GalleryScanStats {
+  markdownFiles: number;
+  filesUnreadable: number;
+}
+
+export function galleryEmptyMessage(
+  scope: GalleryScope,
+  stats: GalleryScanStats
+): { title: string; detail: string } {
+  if (scope === "file") {
+    return {
+      title: "No Mermaid diagrams in this file",
+      detail:
+        "Use a fenced block: ```mermaid then your diagram, then closing ```. Dickory Docs only scans Markdown (.md, .markdown, .mdx).",
+    };
+  }
+  if (stats.markdownFiles === 0) {
+    return {
+      title: "No Markdown files in workspace",
+      detail:
+        "Add a folder that contains .md, .markdown, or .mdx files with ```mermaid blocks. Plain code files (.py, .ts, etc.) are not scanned.",
+    };
+  }
+  if (stats.filesUnreadable > 0) {
+    return {
+      title: "No Mermaid diagrams found",
+      detail: `Scanned ${stats.markdownFiles} Markdown file(s), but ${stats.filesUnreadable} could not be read (permissions or symlinks outside the workspace). None of the readable files contain \`\`\`mermaid fences.`,
+    };
+  }
+  return {
+    title: "No Mermaid diagrams found",
+    detail: `Scanned ${stats.markdownFiles} Markdown file(s); none contain \`\`\`mermaid fenced blocks.`,
+  };
+}
+
 export function mapScannedBlocks(blocks: ScannedMermaidBlock[]): MermaidBlockRef[] {
   return blocks.map((b) => ({
     filePath: b.path,

@@ -61,12 +61,12 @@ export function renderMarkdown(
 
 export function parseMarkdownWithMermaid(content: string): MarkdownParseResult {
   const mermaidBlocks: MermaidBlock[] = [];
-  const mermaidRegex = /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi;
+  const mermaidRegex = /```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*/gi;
   const matches: Array<{ fullMatch: string; content: string; index: number }> = [];
 
   let match;
   while ((match = mermaidRegex.exec(content)) !== null) {
-    const mermaidContent = match[2].trim();
+    const mermaidContent = match[1].trim();
     if (mermaidContent.length > 0) {
       matches.push({
         fullMatch: match[0],
@@ -105,7 +105,7 @@ export type MarkdownSegment =
   | { type: "mermaid"; content: string };
 
 /** Matches ```mermaid fences — keep in sync with Rust `extract_mermaid_blocks_from_markdown`. */
-export const MERMAID_FENCE_REGEX = /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi;
+export const MERMAID_FENCE_REGEX = /```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*/gi;
 
 export type MermaidBlockRef = {
   filePath: string;
@@ -123,7 +123,7 @@ export function extractMermaidBlocks(
   let blockIndex = 0;
 
   while ((match = re.exec(raw)) !== null) {
-    const mermaidContent = match[2].trim();
+    const mermaidContent = match[1].trim();
     if (mermaidContent.length > 0) {
       blocks.push({
         filePath,
@@ -147,7 +147,7 @@ export function splitMarkdownAndMermaid(raw: string): MarkdownSegment[] {
     if (match.index > cursor) {
       segments.push({ type: "markdown", content: raw.slice(cursor, match.index) });
     }
-    const mermaidContent = match[2].trim();
+    const mermaidContent = match[1].trim();
     if (mermaidContent.length > 0) {
       segments.push({ type: "mermaid", content: mermaidContent });
     }

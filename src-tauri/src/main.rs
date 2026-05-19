@@ -73,7 +73,31 @@ fn load_workspaces_inner() -> Result<Vec<WorkspaceRecord>, String> {
         return Ok(vec![]);
     }
     let bytes = fs::read(&p).map_err(|e| e.to_string())?;
-    serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+    let mut list: Vec<WorkspaceRecord> = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    for ws in list.iter_mut() {
+        if let Ok(canon) = canonical_workspace_dir(&ws.path) {
+            let resolved = canon.to_string_lossy().into_owned();
+            if resolved != ws.path {
+                ws.path = resolved;
+                changed = true;
+            }
+        }
+    }
+    if changed {
+        save_workspaces_inner(&list)?;
+    }
+    Ok(list)
+}
+
+/// Resolve workspace root to an absolute path (fixes `~/…`, relative paths, symlinks on Linux).
+fn canonical_workspace_dir(path: &str) -> Result<PathBuf, String> {
+    let pb = PathBuf::from(path.trim());
+    if !pb.is_dir() {
+        return Err(format!("not a directory: {path}"));
+    }
+    pb.canonicalize()
+        .map_err(|e| format!("could not resolve workspace path: {e}"))
 }
 
 fn save_workspaces_inner(list: &[WorkspaceRecord]) -> Result<(), String> {
@@ -130,18 +154,32 @@ fn resolve_under_root(root_canon: &Path, rel: &str) -> Result<PathBuf, String> {
 }
 
 fn rel_path_from_root(root_canon: &Path, full: &Path) -> Result<String, String> {
-    let full_canon = full.canonicalize().map_err(|e| e.to_string())?;
-    let rel = full_canon
-        .strip_prefix(root_canon)
-        .map_err(|_| "not under root".to_string())?;
-    Ok(rel
-        .components()
-        .filter_map(|c| match c {
-            Component::Normal(s) => s.to_str(),
-            _ => None,
-        })
-        .collect::<Vec<_>>()
-        .join("/"))
+    rel_path_from_root_opt(root_canon, full).ok_or_else(|| "not under root".to_string())
+}
+
+fn rel_path_from_root_opt(root_canon: &Path, full: &Path) -> Option<String> {
+    let full_canon = full.canonicalize().ok()?;
+    if !full_canon.starts_with(root_canon) {
+        return None;
+    }
+    let rel = full_canon.strip_prefix(root_canon).ok()?;
+    Some(
+        rel.components()
+            .filter_map(|c| match c {
+                Component::Normal(s) => s.to_str(),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("/"),
+    )
+}
+
+fn walkdir_entry_under_root(root_canon: &Path, entry: &walkdir::DirEntry) -> bool {
+    entry
+        .path()
+        .canonicalize()
+        .map(|p| p.starts_with(root_canon))
+        .unwrap_or(false)
 }
 
 fn iso_mtime(meta: &fs::Metadata) -> String {
@@ -167,19 +205,17 @@ fn workspace_add(name: String, path: String) -> Result<WorkspaceRecord, String> 
     if name.trim().is_empty() || path.is_empty() {
         return Err("name and path required".into());
     }
-    let pb = PathBuf::from(&path);
-    if !pb.is_dir() {
-        return Err("path is not a directory".into());
-    }
+    let canon = canonical_workspace_dir(&path)?;
+    let path = canon.to_string_lossy().into_owned();
     let mut list = load_workspaces_inner()?;
     let now = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
     let ws = WorkspaceRecord {
         id: format!("ws-{}", uuid::Uuid::new_v4()),
         name: name.trim().to_string(),
-        path,
+        path: path.clone(),
         created_at: now.clone(),
         last_used: now,
-        is_git_repo: pb.join(".git").is_dir(),
+        is_git_repo: canon.join(".git").is_dir(),
         git_remote: None,
         git_branch: None,
     };
@@ -289,21 +325,25 @@ fn should_skip_dir(name: &str) -> bool {
     SKIP_DIR_NAMES.contains(&name)
 }
 
+fn markdown_extension(ext: &str) -> bool {
+    matches!(
+        ext.to_ascii_lowercase().as_str(),
+        "md" | "markdown" | "mdx"
+    )
+}
+
 fn is_markdown_file(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
-        .map(|ext| {
-            let ext = ext.to_ascii_lowercase();
-            ext == "md" || ext == "markdown"
-        })
+        .map(markdown_extension)
         .unwrap_or(false)
 }
 
-/// Match TS: /```\s*mermaid\s*(\r?\n|\r)([\s\S]*?)```/gi
-fn extract_mermaid_blocks_from_markdown(content: &str) -> Vec<String> {
+/// Match TS `MERMAID_FENCE_REGEX` — newline after `mermaid` is optional; closing fence may have trailing spaces.
+pub fn extract_mermaid_blocks_from_markdown(content: &str) -> Vec<String> {
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| {
-        Regex::new(r"(?is)```\s*mermaid\s*(?:\r?\n|\r)([\s\S]*?)```")
+        Regex::new(r"(?is)```\s*mermaid\s*(?:\r?\n|\r)?([\s\S]*?)```\s*")
             .expect("mermaid fence regex")
     });
     re.captures_iter(content)
@@ -326,24 +366,42 @@ pub struct MermaidBlockOut {
     pub content: String,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MermaidScanOut {
+    pub blocks: Vec<MermaidBlockOut>,
+    pub markdown_files: u32,
+    pub files_unreadable: u32,
+}
+
 #[tauri::command]
-fn workspace_scan_mermaid(root: String) -> Result<Vec<MermaidBlockOut>, String> {
+fn workspace_scan_mermaid(root: String) -> Result<MermaidScanOut, String> {
     let root_pb = root_path_buf(&root)?;
     let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
     let mut blocks: Vec<MermaidBlockOut> = Vec::new();
+    let mut markdown_files: u32 = 0;
+    let mut files_unreadable: u32 = 0;
 
     for entry in WalkDir::new(&root_canon)
-        .follow_links(false)
+        .follow_links(true)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
                 let name = e.file_name().to_string_lossy();
-                return !should_skip_dir(&name);
+                if should_skip_dir(&name) {
+                    return false;
+                }
             }
-            true
+            walkdir_entry_under_root(&root_canon, e)
         })
     {
-        let entry = entry.map_err(|e| e.to_string())?;
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => {
+                files_unreadable += 1;
+                continue;
+            }
+        };
         if !entry.file_type().is_file() {
             continue;
         }
@@ -351,8 +409,18 @@ fn workspace_scan_mermaid(root: String) -> Result<Vec<MermaidBlockOut>, String> 
         if !is_markdown_file(full) {
             continue;
         }
-        let rel = rel_path_from_root(&root_canon, full)?;
-        let text = fs::read_to_string(full).map_err(|e| e.to_string())?;
+        let Some(rel) = rel_path_from_root_opt(&root_canon, full) else {
+            files_unreadable += 1;
+            continue;
+        };
+        let text = match fs::read_to_string(full) {
+            Ok(t) => t,
+            Err(_) => {
+                files_unreadable += 1;
+                continue;
+            }
+        };
+        markdown_files += 1;
         for (block_index, content) in extract_mermaid_blocks_from_markdown(&text)
             .into_iter()
             .enumerate()
@@ -372,14 +440,18 @@ fn workspace_scan_mermaid(root: String) -> Result<Vec<MermaidBlockOut>, String> 
             .then(a.block_index.cmp(&b.block_index))
     });
 
-    Ok(blocks)
+    Ok(MermaidScanOut {
+        blocks,
+        markdown_files,
+        files_unreadable,
+    })
 }
 
 const MAX_FILE_SEARCH_RESULTS: usize = 500;
 
 fn is_markdown_name(name: &str) -> bool {
     let n = name.to_ascii_lowercase();
-    n.ends_with(".md") || n.ends_with(".markdown")
+    n.ends_with(".md") || n.ends_with(".markdown") || n.ends_with(".mdx")
 }
 
 #[derive(Serialize)]
@@ -634,6 +706,62 @@ fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
         fs::remove_file(&target).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::extract_mermaid_blocks_from_markdown;
+
+    #[test]
+    fn mermaid_fence_with_newline() {
+        let md = "# T\n\n```mermaid\ngraph TD\n  A --> B\n```\n";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+        assert!(blocks[0].contains("graph TD"));
+    }
+
+    #[test]
+    fn mermaid_fence_same_line_after_tag() {
+        let md = "```mermaid\ngraph LR\n  X --> Y\n```";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+    }
+
+    #[test]
+    fn mermaid_fence_inline_body() {
+        let md = "```mermaid graph TD\n  A --> B\n```";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+        assert!(blocks[0].starts_with("graph TD"));
+    }
+
+    #[test]
+    fn mermaid_fence_closing_whitespace() {
+        let md = "```mermaid\nflowchart TD\n  A --> B\n```   \n";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+    }
+
+    #[test]
+    fn mermaid_fence_case_insensitive() {
+        let md = "```MERMAID\nsequenceDiagram\n  A->>B: hi\n```";
+        let blocks = extract_mermaid_blocks_from_markdown(md);
+        assert_eq!(blocks.len(), 1);
+    }
+
+    #[test]
+    fn mermaid_layout_samples_fixture() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../samples/mermaid-layouts.md");
+        let md = std::fs::read_to_string(&path).expect("samples/mermaid-layouts.md");
+        let blocks = extract_mermaid_blocks_from_markdown(&md);
+        assert_eq!(blocks.len(), 5, "layout sample fixture should have 5 blocks");
+        assert!(blocks[0].contains("flowchart LR"));
+        assert!(blocks[1].contains("defaultRenderer"));
+        assert!(blocks[2].contains("elk.stress"));
+        assert!(blocks[3].contains("flowchart-elk"));
+        assert!(blocks[4].contains("tidy-tree"));
+    }
 }
 
 fn main() {

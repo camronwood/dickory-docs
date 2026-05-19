@@ -1,6 +1,6 @@
 [package]
 name = "dickory-docs"
-version = "0.3.1"
+version = "0.3.2"
 description = "Dickory Docs — local Mermaid diagram viewer for Markdown on disk"
 authors = ["Camron Wood"]
 edition = "2021"

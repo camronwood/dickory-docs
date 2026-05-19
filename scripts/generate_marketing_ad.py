@@ -12,6 +12,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
 ICON_PATH = ROOT / "docs" / "assets" / "icon" / "apple-touch-icon.png"
+SCREENSHOT_PATH = ROOT / "assets" / "screenshots" / "split-editor.png"
 SIZE = 1080
 
 # Landing page palette (docs/css/landing.css)
@@ -259,11 +260,109 @@ def generate_oss_ad(out: Path, fonts) -> None:
     print(f"Wrote {out}")
 
 
+def paste_screenshot_frame(base: Image.Image, y: int, frame_w: int, frame_h: int) -> int:
+    """Embed app screenshot in a rounded card; returns y below frame."""
+    w = base.width
+    x0 = (w - frame_w) // 2
+    y0 = y
+    x1, y1 = x0 + frame_w, y0 + frame_h
+
+    shadow = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    sdraw = ImageDraw.Draw(shadow)
+    sdraw.rounded_rectangle([x0 + 6, y0 + 10, x1 + 6, y1 + 10], radius=22, fill=(0, 0, 0, 120))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(8))
+    base_rgba = base.convert("RGBA")
+    base_rgba = Image.alpha_composite(base_rgba, shadow)
+    base.paste(base_rgba.convert("RGB"))
+
+    draw = ImageDraw.Draw(base)
+    rounded_rect(draw, (x0, y0, x1, y1), 20, ACCENT_DIM, width=3, fill=BG_CARD)
+
+    if SCREENSHOT_PATH.exists():
+        shot = Image.open(SCREENSHOT_PATH).convert("RGBA")
+        inner_pad = 12
+        inner_w = frame_w - inner_pad * 2
+        inner_h = frame_h - inner_pad * 2
+        shot.thumbnail((inner_w, inner_h), Image.Resampling.LANCZOS)
+        sx = x0 + (frame_w - shot.width) // 2
+        sy = y0 + (frame_h - shot.height) // 2
+        base.paste(shot, (sx, sy), shot)
+    else:
+        draw = ImageDraw.Draw(base)
+        draw.text(
+            (x0 + 40, y0 + frame_h // 2 - 12),
+            "Add assets/screenshots/split-editor.png",
+            font=ImageFont.load_default(),
+            fill=TEXT_MUTED,
+        )
+
+    return y1 + 28
+
+
+def generate_download_ad(out: Path, fonts) -> None:
+    """v0.3.0 download promo — screenshot hero + release CTA (1080×1080)."""
+    w, h = SIZE, SIZE
+    img = draw_background(w, h, seed=11)
+    draw = ImageDraw.Draw(img)
+
+    y = 56
+    y = center_text(draw, y, "FOR LOCAL MARKDOWN", fonts["label"], TEXT_MUTED, w) + 28
+
+    title = "DICKORY DOCS"
+    bbox = draw.textbbox((0, 0), title, font=fonts["title"])
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    tx = (w - tw) // 2
+    draw.text((tx, y), title, font=fonts["title"], fill=WHITE)
+    docs_start = tx + draw.textlength("DICKORY ", font=fonts["title"])
+    docs_w = draw.textlength("DOCS", font=fonts["title"])
+    uy = y + th + 6
+    draw.rounded_rectangle([docs_start, uy, docs_start + docs_w, uy + 5], radius=3, fill=ACCENT)
+    y += th + 36
+
+    y = center_text(draw, y, "Finally, a Mermaid viewer that just works.", fonts["headline"], TEXT, w) + 10
+    y = center_text(draw, y, "Edit Markdown. Render diagrams. Stay local.", fonts["headline"], ACCENT, w) + 22
+
+    pill_w, pill_h, gap = 300, 56, 14
+    total_w = pill_w * 3 + gap * 2
+    x0 = (w - total_w) // 2
+    pills = [
+        ("Split editor", (120, 190, 255)),
+        ("Open With .md", (90, 210, 170)),
+        ("Diagram gallery", (180, 130, 255)),
+    ]
+    for i, (label, color) in enumerate(pills):
+        draw_feature_pill(draw, x0 + i * (pill_w + gap), y, pill_w, pill_h, label, color, fonts)
+    y += pill_h + 20
+
+    y = paste_screenshot_frame(img, y, frame_w=920, frame_h=380)
+
+    draw = ImageDraw.Draw(img)
+    banner_text = "NOW AVAILABLE — v0.3.0"
+    bf = fonts["oss_sub"]
+    bbox = draw.textbbox((0, 0), banner_text, font=bf)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    pad_x, pad_y = 36, 16
+    bx0 = (w - tw) // 2 - pad_x
+    by0 = y
+    bx1 = bx0 + tw + pad_x * 2
+    by1 = by0 + th + pad_y * 2
+    rounded_rect(draw, (bx0, by0, bx1, by1), 16, ACCENT, width=0, fill=ACCENT)
+    draw.text((bx0 + pad_x, by0 + pad_y), banner_text, font=bf, fill=BG_DEEP)
+    y = by1 + 16
+
+    center_text(draw, y, "macOS · Windows · Linux", fonts["footer"], TEXT_MUTED, w)
+    center_text(draw, h - 52, "github.com/camronwood/dickory-docs/releases", fonts["footer"], TEXT_MUTED, w)
+
+    img.save(out, "PNG", optimize=True)
+    print(f"Wrote {out}")
+
+
 def main() -> None:
     ASSETS.mkdir(parents=True, exist_ok=True)
     fonts = load_fonts()
     generate_social_ad(ASSETS / "dickory-docs-social-ad-1080.png", fonts)
     generate_oss_ad(ASSETS / "dickory-docs-oss-contributors-ad-1080.png", fonts)
+    generate_download_ad(ASSETS / "dickory-docs-download-ad-1080.png", fonts)
 
 
 if __name__ == "__main__":
