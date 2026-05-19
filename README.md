@@ -23,6 +23,15 @@ Vite dev server runs on port **5177**; Tauri opens the desktop window.
 
 **Install (download):** [GitHub Releases](https://github.com/camronwood/dickory-docs/releases) — pick the `.dmg` (macOS), `.msi` (Windows), or `.AppImage` / `.deb` (Linux) for your machine.
 
+**Linux — which artifact?** Run `uname -m`:
+
+| `uname -m` | Download |
+|------------|----------|
+| `x86_64` | `*_amd64.AppImage` or `*_amd64.deb` |
+| `aarch64` | `*_aarch64.AppImage` or `*_aarch64.deb` |
+
+One-time setup: `chmod +x` the AppImage; on Ubuntu, `sudo apt install libfuse2t64` or `libfuse2` if the AppImage won’t start. Ubuntu 24.04: AppImage is more reliable than `.deb` (WebKit 4.0 dependency). Optional installer script: [`scripts/install-linux.sh`](scripts/install-linux.sh).
+
 **macOS — which `.dmg`?** Run `uname -m` in Terminal:
 
 | `uname -m` | Download |

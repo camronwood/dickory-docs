@@ -29,7 +29,12 @@ jobs:
             name: Windows
           - platform: ubuntu-22.04
             args: ""
-            name: Linux
+            name: Linux (x86_64)
+            install_linux_deps: true
+          - platform: ubuntu-22.04-arm
+            args: ""
+            name: Linux (ARM64)
+            install_linux_deps: true
 
     runs-on: ${{ matrix.platform }}
 
@@ -49,7 +54,7 @@ jobs:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.install_linux_deps == true
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -80,7 +85,10 @@ jobs:
             | **macOS** (`uname -m` → `arm64`) | `*_aarch64.dmg` (Apple Silicon, native) |
             | **macOS** (`uname -m` → `x86_64`) | `*_x64.dmg` (Intel) |
             | **Windows** | `.msi` installer (or `.exe` setup) |
-            | **Linux** | `.AppImage` and/or `.deb` |
+            | **Linux** · `uname -m` → `x86_64` | `*_amd64.AppImage` and/or `*_amd64.deb` |
+            | **Linux** · `uname -m` → `aarch64` | `*_aarch64.AppImage` and/or `*_aarch64.deb` |
+
+            **Linux:** Run `uname -m` — use **amd64** artifacts on Intel/AMD PCs, **aarch64** on ARM (Raspberry Pi, ARM laptops). Ubuntu 24.04: prefer AppImage; install FUSE once with `sudo apt install libfuse2t64` or `libfuse2`.
 
             On Apple Silicon, if the `aarch64` build misbehaves, use `*_x64.dmg` (runs under Rosetta).
 
