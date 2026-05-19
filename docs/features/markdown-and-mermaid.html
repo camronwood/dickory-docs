@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mermaid diagram viewer — Dickory Docs</title>
-  <meta name="description" content="Why Dickory Docs exists: local Mermaid diagram viewing in Markdown — inline SVG, expand to modal, no upload required." />
+  <meta name="description" content="Mermaid diagram viewer with ELK and tidy-tree layouts in local Markdown — init directives, frontmatter, flowchart-elk, inline SVG, expand to modal." />
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icon/favicon-32.png" />
   <link rel="apple-touch-icon" href="../assets/icon/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,6 +14,14 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="dev-banner" role="status">
+    <div class="wrap dev-banner-inner">
+      <strong>v0.3.2</strong>
+      <span><strong>ELK</strong> &amp; tidy-tree layouts · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="../release-notes.html#v0-3-2">Release notes</a></span>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="wrap">
       <a class="logo" href="../index.html" aria-label="Dickory Docs home">
@@ -53,7 +61,7 @@
       <h2>Diagram types you can view</h2>
       <p>Anything Mermaid supports in your version — commonly <strong>flowcharts</strong>, <strong>sequence diagrams</strong>, <strong>class/ER diagrams</strong>, <strong>state machines</strong>, <strong>Gantt</strong> charts, and more. If it renders in Mermaid, Dickory Docs will attempt it from your fenced block.</p>
 
-      <h2>Layout engines (dagre, ELK, tidy-tree)</h2>
+      <h2 id="layout-engines">Layout engines (dagre, ELK, tidy-tree)</h2>
       <p>Flowcharts use <strong>dagre</strong> by default (Mermaid’s built-in <code>dagre-wrapper</code>). Dickory Docs also bundles the official Mermaid 11 layout packages so opt-in layouts work from your Markdown — no paste into the live editor required.</p>
       <ul>
         <li><strong>ELK</strong> — layered, stress, force, and other ELK variants for dense flowcharts. Use an init directive, YAML frontmatter, or <code>flowchart-elk</code> as the diagram type.</li>

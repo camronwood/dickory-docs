@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dickory Docs — A Mermaid diagram viewer that actually works</title>
-  <meta name="description" content="Dickory Docs — native desktop app built for viewing Mermaid diagrams in local Markdown: inline SVG, full-screen expand, multi-folder workspaces. No paste-into-a-website required." />
+  <meta name="description" content="Dickory Docs v0.3.2 — native Mermaid viewer with ELK and tidy-tree layouts in local Markdown. Inline SVG, diagram gallery, workspaces. macOS, Windows, Linux." />
   <meta property="og:title" content="Dickory Docs — A Mermaid diagram viewer that actually works" />
   <meta property="og:description" content="v0.3.2 — Mermaid ELK and tidy-tree layouts in local Markdown. Native desktop app for Apple Silicon, Intel, Windows, and Linux." />
   <meta property="og:type" content="website" />
@@ -58,14 +58,39 @@
           <a class="btn btn-ghost" href="features/markdown-and-mermaid.html">Why Mermaid wins here</a>
           <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs#quick-start">Build from source</a>
         </div>
-        <p class="hero-meta">Mermaid 11 · marked · Tauri · React · Rust</p>
+        <p class="hero-meta">Mermaid 11 · ELK + tidy-tree · Tauri · React · Rust</p>
       </div>
     </section>
 
-    <section class="latest-feature" id="why-mermaid" aria-labelledby="why-mermaid-heading">
+    <section class="latest-feature" id="v0-3-2" aria-labelledby="v032-heading">
       <div class="wrap latest-feature-inner">
         <div class="latest-feature-copy">
-          <p class="latest-feature-kicker">v0.3.2 · The reason this app exists</p>
+          <p class="latest-feature-kicker">New in v0.3.2</p>
+          <h2 id="v032-heading">ELK and tidy-tree layouts — no paste into mermaid.live</h2>
+          <p class="latest-feature-lead">Architecture docs increasingly use <code>%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%</code> or YAML <code>layout: elk</code>. Dickory Docs registers the official Mermaid 11 layout packages so those diagrams render on disk — not as a silent dagre fallback.</p>
+          <ul class="feature-list feature-list--tight latest-feature-list">
+            <li><strong>ELK</strong> — layered, stress, force, and other variants via init directive, frontmatter, or <code>flowchart-elk</code>.</li>
+            <li><strong>Tidy-tree</strong> — bidirectional mindmap layout with <code>layout: tidy-tree</code>.</li>
+            <li><strong>Dagre default</strong> — unchanged when your docs do not opt into ELK.</li>
+          </ul>
+          <div class="latest-feature-actions">
+            <a class="btn btn-primary" href="features/markdown-and-mermaid.html#layout-engines">Layout guide</a>
+            <a class="btn btn-ghost" href="release-notes.html#v0-3-2">v0.3.2 release notes</a>
+          </div>
+        </div>
+        <aside class="latest-feature-aside" aria-label="Try it">
+          <p class="latest-feature-aside-label">Sample file in the repo</p>
+          <p class="latest-feature-aside-title"><code>samples/mermaid-layouts.md</code></p>
+          <p class="latest-feature-aside-text">Five fenced blocks — dagre baseline, ELK init, <code>elk.stress</code> frontmatter, <code>flowchart-elk</code>, and a tidy-tree mindmap. Open after download to confirm layouts in preview and the diagram gallery.</p>
+          <a class="btn btn-ghost btn-sm" href="https://github.com/camronwood/dickory-docs/blob/main/samples/mermaid-layouts.md">View on GitHub →</a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="latest-feature section-alt" id="why-mermaid" aria-labelledby="why-mermaid-heading">
+      <div class="wrap latest-feature-inner">
+        <div class="latest-feature-copy">
+          <p class="latest-feature-kicker">The reason this app exists</p>
           <h2 id="why-mermaid-heading">You shouldn't need a hack to see your diagrams</h2>
           <p class="latest-feature-lead">Most tools either skip Mermaid, render it wrong, or make you paste into a browser tab. Dickory Docs treats diagrams as first-class: open the Markdown file from your repo, and <strong>sequence, flow, ER, and architecture charts</strong> show up where the author put them — not as raw code fences.</p>
           <ul class="feature-list feature-list--tight latest-feature-list">
@@ -92,6 +117,8 @@
       <div class="wrap stack-inner">
         <span><strong>Mermaid</strong> inline SVG + expand</span>
         <span aria-hidden="true">·</span>
+        <span><strong>ELK</strong> + tidy-tree layouts</span>
+        <span aria-hidden="true">·</span>
         <span><strong>Markdown</strong> rendered preview</span>
         <span aria-hidden="true">·</span>
         <span><strong>Workspaces</strong> folders on disk</span>
@@ -112,7 +139,7 @@
           <article class="card">
             <div class="card-icon" aria-hidden="true">◇</div>
             <h3>Mermaid diagram viewer</h3>
-            <p>The headline feature: fenced <code>mermaid</code> blocks become SVG in your preview. Expand busy flowcharts and sequence diagrams to a modal — built because existing viewers weren’t good enough.</p>
+            <p>The headline feature: fenced <code>mermaid</code> blocks become SVG in your preview — including <strong>ELK</strong> and <strong>tidy-tree</strong> layouts when your docs opt in. Expand busy flowcharts to a modal.</p>
             <p class="card-cta"><a class="card-link" href="features/markdown-and-mermaid.html">Deep dive →</a></p>
           </article>
           <article class="card">
