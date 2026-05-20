@@ -4,6 +4,8 @@
 #[cfg(target_os = "macos")]
 mod macos_open;
 
+mod fs_watch;
+
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -701,6 +703,48 @@ fn workspace_search_files(
     Ok(FileSearchResult { results: out, truncated })
 }
 
+/// All `.md`, `.markdown`, `.mdx`, and `.mmd` files under a workspace (for markdown-only tree).
+#[tauri::command]
+fn workspace_list_markdown_files(root: String) -> Result<Vec<FileNodeOut>, String> {
+    let root_pb = root_path_buf(&root)?;
+    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+    let mut out: Vec<FileNodeOut> = Vec::new();
+
+    for entry in WalkDir::new(&root_canon)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(|e| {
+            if e.file_type().is_dir() {
+                let name = e.file_name().to_string_lossy();
+                return !should_skip_dir(&name);
+            }
+            true
+        })
+    {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let full = entry.path();
+        if !is_markdown_file(full) {
+            continue;
+        }
+        let meta = entry.metadata().map_err(|e| e.to_string())?;
+        let path_rel = rel_path_from_root(&root_canon, full)?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        out.push(FileNodeOut {
+            name,
+            is_dir: false,
+            size: meta.len(),
+            mod_time: iso_mtime(&meta),
+            path: path_rel,
+        });
+    }
+
+    out.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+    Ok(out)
+}
+
 #[tauri::command]
 fn push_markdown_path(paths: &mut Vec<PathBuf>, raw: &str) {
     let raw = raw.trim();
@@ -972,6 +1016,7 @@ mod tests {
 
 fn main() {
     tauri::Builder::default()
+        .manage(fs_watch::FsWatchState::default())
         .setup(|app| {
             let handle = app.handle();
             let cli_matches = app.get_cli_matches().ok();
@@ -993,6 +1038,9 @@ fn main() {
             delete_entry,
             workspace_scan_mermaid,
             workspace_search_files,
+            workspace_list_markdown_files,
+            fs_watch::workspace_fs_watch_set,
+            fs_watch::workspace_fs_watch_clear,
             take_launch_open_files,
             resolve_external_file,
         ])

@@ -64,7 +64,7 @@ Or: `make build-release` on macOS after [Tauri prerequisites](https://v1.tauri.a
 
 - **Folder workspaces** — persisted under `DickoryDocs` in your OS config dir (migrates from legacy `DocWatson` once).
 - **Markdown preview** — sanitised HTML, title in the window chrome.
-- **File explorer** — resizable sidebar, markdown-only filter, create/rename/delete.
+- **File explorer** — resizable sidebar, Markdown & `.mmd` filter (workspace scan, no empty folders), live refresh when files change on disk, create/rename/delete.
 - **Preview deep link:** `?preview=true&workspace={id}&path={relativePath}`
 
 ## Stack

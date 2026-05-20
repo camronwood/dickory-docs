@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dickory Docs — A Mermaid diagram viewer that actually works</title>
-  <meta name="description" content="Dickory Docs v0.3.2 — native Mermaid viewer with ELK and tidy-tree layouts in local Markdown. Inline SVG, diagram gallery, workspaces. macOS, Windows, Linux." />
+  <meta name="description" content="Dickory Docs v0.3.7 — Mermaid viewer for local Markdown and .mmd files. Live file tree, Markdown-only filter, ELK layouts, diagram gallery. macOS, Windows, Linux." />
   <meta property="og:title" content="Dickory Docs — A Mermaid diagram viewer that actually works" />
-  <meta property="og:description" content="v0.3.2 — Mermaid ELK and tidy-tree layouts in local Markdown. Native desktop app for Apple Silicon, Intel, Windows, and Linux." />
+  <meta property="og:description" content="v0.3.7 — Live workspace file tree, Markdown &amp; .mmd filter, Mermaid ELK layouts. Native desktop app for Apple Silicon, Intel, Windows, and Linux." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://camronwood.github.io/dickory-docs/assets/icon/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -23,8 +23,8 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>v0.3.2 — ELK &amp; tidy-tree Mermaid layouts</strong>
-      <span><a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/markdown-and-mermaid.html">Layout guide</a> · <a href="release-notes.html#v0-3-2">Release notes</a></span>
+      <strong>v0.3.7 — Live file tree &amp; Markdown/.mmd filter</strong>
+      <span><a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="release-notes.html#v0-3-7">Release notes</a> · <a href="features/markdown-and-mermaid.html">Mermaid guide</a></span>
     </div>
   </div>
 
@@ -62,10 +62,35 @@
       </div>
     </section>
 
-    <section class="latest-feature" id="v0-3-2" aria-labelledby="v032-heading">
+    <section class="latest-feature" id="v0-3-7" aria-labelledby="v037-heading">
       <div class="wrap latest-feature-inner">
         <div class="latest-feature-copy">
-          <p class="latest-feature-kicker">New in v0.3.2</p>
+          <p class="latest-feature-kicker">New in v0.3.7</p>
+          <h2 id="v037-heading">File tree that stays in sync with your repo</h2>
+          <p class="latest-feature-lead">Docs change in VS Code, Cursor, or a terminal — Dickory Docs picks them up. The <strong>Markdown &amp; .mmd only</strong> filter scans the workspace and shows real files only (no empty folders), including standalone <code>.mmd</code> diagrams.</p>
+          <ul class="feature-list feature-list--tight latest-feature-list">
+            <li><strong>Live refresh</strong> — filesystem watch on the active workspace; debounced updates without manual reload.</li>
+            <li><strong>Smarter filter</strong> — <code>.md</code>, <code>.mdx</code>, <code>.markdown</code>, and <code>.mmd</code>; ancestor folders only when they contain a match.</li>
+            <li><strong>Expanded dirs</strong> — nested folders you have open refresh too when files appear elsewhere on disk.</li>
+          </ul>
+          <div class="latest-feature-actions">
+            <a class="btn btn-primary" href="release-notes.html#v0-3-7">v0.3.7 release notes</a>
+            <a class="btn btn-ghost" href="features/workspaces.html">Workspaces guide</a>
+          </div>
+        </div>
+        <aside class="latest-feature-aside" aria-label="Also in this release">
+          <p class="latest-feature-aside-label">Still shipping</p>
+          <p class="latest-feature-aside-title">Untagged fences &amp; whole-file <code>.mmd</code></p>
+          <p class="latest-feature-aside-text">Since <a href="release-notes.html#v0-3-6">v0.3.6</a>: plain <code>```</code> blocks with diagram syntax and standalone <code>.mmd</code> files render in preview and the diagram gallery.</p>
+          <a class="btn btn-ghost btn-sm" href="release-notes.html#v0-3-6">v0.3.6 notes →</a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="latest-feature section-alt" id="v0-3-2" aria-labelledby="v032-heading">
+      <div class="wrap latest-feature-inner">
+        <div class="latest-feature-copy">
+          <p class="latest-feature-kicker">v0.3.2+</p>
           <h2 id="v032-heading">ELK and tidy-tree layouts — no paste into mermaid.live</h2>
           <p class="latest-feature-lead">Architecture docs increasingly use <code>%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%</code> or YAML <code>layout: elk</code>. Dickory Docs registers the official Mermaid 11 layout packages so those diagrams render on disk — not as a silent dagre fallback.</p>
           <ul class="feature-list feature-list--tight latest-feature-list">
@@ -157,7 +182,7 @@
           <article class="card">
             <div class="card-icon" aria-hidden="true">🌲</div>
             <h3>File explorer</h3>
-            <p>Resizable sidebar, <strong>filter by file name</strong>, markdown-only filter, context-menu create/rename/delete, and plain-text view for non-Markdown files.</p>
+            <p>Resizable sidebar, <strong>Markdown &amp; .mmd filter</strong>, <strong>live refresh</strong> when files change on disk, name search, and create/rename/delete via context menu.</p>
             <p class="card-cta"><a class="card-link" href="features/file-explorer.html">Deep dive →</a></p>
           </article>
           <article class="card">
@@ -252,7 +277,7 @@
             <h3 class="workflow-title">1. Open your doc folder</h3>
             <ul class="feature-list feature-list--tight">
               <li>Add a <strong>workspace</strong> pointing at the repo or docs tree.</li>
-              <li>Toggle <strong>Markdown only</strong> or type in the <strong>file name</strong> filter to jump straight to the right <code>.md</code>.</li>
+              <li>Toggle <strong>Markdown &amp; .mmd only</strong> or search by file name — the tree updates when files change in another app.</li>
               <li>Pick the file that contains your diagrams — or <strong>Open With</strong> Dickory Docs from Finder.</li>
             </ul>
           </div>
@@ -279,7 +304,7 @@
     <section class="section-alt" id="download" aria-labelledby="download-heading">
       <div class="wrap">
         <h2 id="download-heading">Download &amp; install</h2>
-        <p class="section-intro">Latest build: <strong>v0.3.6</strong> on <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> — macOS <code>.dmg</code>, Windows <code>.msi</code>, Linux <code>.AppImage</code> / <code>.deb</code>.</p>
+        <p class="section-intro">Latest build: <strong>v0.3.7</strong> on <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> — macOS <code>.dmg</code>, Windows <code>.msi</code>, Linux <code>.AppImage</code> / <code>.deb</code>.</p>
         <div class="install-table-wrap" role="region" aria-label="Choose your installer">
           <table class="install-table">
             <thead>
@@ -314,7 +339,7 @@
         </div>
         <p class="install-footnote">macOS builds are unsigned — first launch: <strong>right-click → Open</strong>. For Finder <strong>Open With</strong>, see the <a href="features/open-with-mac.html">macOS guide</a>. On Linux ARM (e.g. Raspberry Pi), do not use <code>amd64</code> installers — use <code>aarch64</code> artifacts only.</p>
         <p style="margin-top: 1.25rem;">
-          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Download v0.3.4</a>
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Download v0.3.7</a>
           <a class="btn btn-ghost" href="https://github.com/camronwood/dickory-docs#quick-start" style="margin-left: 0.5rem;">Build from source</a>
         </p>
       </div>
@@ -326,10 +351,10 @@
         <p class="section-intro">Installers for macOS, Windows, and Linux are on <a href="https://github.com/camronwood/dickory-docs/releases">GitHub Releases</a>. See <a href="release-notes.html">release notes</a> for what shipped in each version.</p>
         <div class="release-landing-preview">
           <p class="release-landing-label">Latest</p>
-          <p class="release-landing-version"><strong>v0.3.2</strong> <time datetime="2026-05-19">May 19, 2026</time></p>
-          <p class="release-landing-summary">macOS Finder Open With for <code>.md</code> files works again; install docs clarify <code>uname -m</code> vs <code>aarch64</code> / <code>x64</code> DMGs.</p>
+          <p class="release-landing-version"><strong>v0.3.7</strong> <time datetime="2026-05-20">May 20, 2026</time></p>
+          <p class="release-landing-summary">Markdown &amp; .mmd-only file tree (no empty folders) and automatic sidebar refresh when files change outside the app.</p>
           <p class="release-landing-actions">
-            <a class="btn btn-primary" href="release-notes.html#v0-3-2">Release notes (v0.3.2)</a>
+            <a class="btn btn-primary" href="release-notes.html#v0-3-7">Release notes (v0.3.7)</a>
           </p>
         </div>
       </div>
@@ -339,8 +364,8 @@
       <div class="wrap">
         <div class="cta-band">
           <h2 id="cta-heading">Download Dickory Docs</h2>
-          <p>Install <strong>v0.3.2</strong> from <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> or see the <a href="#download">install table</a> above. <a href="https://github.com/camronwood/dickory-docs/issues">File issues</a> or <a href="https://github.com/camronwood/dickory-docs/pulls">open a pull request</a> if you improve something.</p>
-          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Get v0.3.2</a>
+          <p>Install <strong>v0.3.7</strong> from <a href="https://github.com/camronwood/dickory-docs/releases/latest">GitHub Releases</a> or see the <a href="#download">install table</a> above. <a href="https://github.com/camronwood/dickory-docs/issues">File issues</a> or <a href="https://github.com/camronwood/dickory-docs/pulls">open a pull request</a> if you improve something.</p>
+          <a class="btn btn-primary" href="https://github.com/camronwood/dickory-docs/releases/latest">Get v0.3.7</a>
         </div>
       </div>
     </section>

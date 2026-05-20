@@ -17,8 +17,8 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>Latest: v0.3.6</strong>
-      <span><strong>ELK</strong> &amp; tidy-tree Mermaid layouts · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="features/markdown-and-mermaid.html">Layout guide</a></span>
+      <strong>Latest: v0.3.7</strong>
+      <span><strong>File tree</strong> — Markdown/.mmd filter &amp; live refresh · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="release-notes.html#v0-3-7">Release notes</a></span>
     </div>
   </div>
 
@@ -47,6 +47,7 @@
 
     <nav class="release-jump" aria-label="Jump to version">
       <span class="release-jump-label">Jump:</span>
+      <a href="#v0-3-7">v0.3.7</a>
       <a href="#v0-3-6">v0.3.6</a>
       <a href="#v0-3-4">v0.3.4</a>
       <a href="#v0-3-3">v0.3.3</a>
@@ -59,6 +60,15 @@
     </nav>
 
     <article class="feature-prose">
+      <h2 id="v0-3-7" class="release-version-heading">v0.3.7 <span class="release-date">· May 20, 2026</span></h2>
+      <p>Smarter <strong>Markdown-only</strong> file tree and automatic refresh when files change outside the app.</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li><strong>Markdown &amp; .mmd filter</strong> — checkbox scans the workspace and shows only <code>.md</code>, <code>.markdown</code>, <code>.mdx</code>, and <code>.mmd</code> files; folders appear only on paths that contain a match (no empty branches).</li>
+        <li><strong>Live file tree</strong> — filesystem watch on the active workspace refreshes the sidebar when another editor, terminal, or git changes files on disk (debounced; skips <code>node_modules</code>, <code>.git</code>, etc.).</li>
+        <li><strong>Expanded folders</strong> — refresh reloads the workspace root and any expanded directories so nested files stay in sync.</li>
+      </ul>
+
       <h2 id="v0-3-6" class="release-version-heading">v0.3.6 <span class="release-date">· May 19, 2026</span></h2>
       <p>Broader Mermaid detection for real-world docs (untagged fences and <code>.mmd</code> files).</p>
       <h3>Desktop</h3>

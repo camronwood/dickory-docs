@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { useFileExplorerStore, normalizeFetchedNodes } from "../stores/fileExplorerStore";
 import type { FileNode } from "../stores/fileExplorerStore";
 import { formatSearchResultPath } from "../utils/workspaceFileSearch";
+import { buildMarkdownOnlyTree } from "../utils/markdownOnlyTree";
+import { useWorkspaceFsWatch } from "../hooks/useWorkspaceFsWatch";
 import { open } from "@tauri-apps/api/dialog";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useMarkdownEditorStore } from "../stores/markdownEditorStore";
@@ -49,7 +51,7 @@ function isMarkdownPath(path: string, basename?: string): boolean {
   return false;
 }
 
-/** Show only `.md` files; hide folders whose loaded children contain no Markdown after filtering. Unexpanded dirs stay visible until loaded. */
+/** Fallback while the full-workspace markdown scan is loading (lazy tree only). */
 function filterTreeMarkdownOnly(nodes: FileNode[]): FileNode[] {
   const out: FileNode[] = [];
   for (const node of nodes) {
@@ -61,8 +63,6 @@ function filterTreeMarkdownOnly(nodes: FileNode[]): FileNode[] {
       const filteredChildren = filterTreeMarkdownOnly(node.children);
       if (filteredChildren.length === 0) continue;
       out.push({ ...node, children: filteredChildren });
-    } else {
-      out.push(node);
     }
   }
   return out;
@@ -132,6 +132,8 @@ export function FileExplorerPanel({
   const [searchResults, setSearchResults] = useState<FileNode[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchTruncated, setSearchTruncated] = useState(false);
+  const [markdownOnlyTree, setMarkdownOnlyTree] = useState<FileNode[] | null>(null);
+  const [markdownOnlyTreeLoading, setMarkdownOnlyTreeLoading] = useState(false);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -149,6 +151,49 @@ export function FileExplorerPanel({
       loadFiles(activeWorkspaceId);
     }
   }, [activeWorkspaceId, loadFiles]);
+
+  useWorkspaceFsWatch(activeWorkspaceId, workspaces);
+
+  const files = activeWorkspaceId ? fileTree[activeWorkspaceId] ?? EMPTY_FILE_LIST : EMPTY_FILE_LIST;
+
+  useEffect(() => {
+    if (!markdownOnly || !activeWorkspaceId) {
+      setMarkdownOnlyTree(null);
+      setMarkdownOnlyTreeLoading(false);
+      return;
+    }
+
+    const workspace = workspaces.find((w) => w.id === activeWorkspaceId);
+    if (!workspace) return;
+
+    let cancelled = false;
+    setMarkdownOnlyTreeLoading(true);
+
+    void (async () => {
+      try {
+        const raw = await invoke<FileNode[]>("workspace_list_markdown_files", {
+          root: workspace.path,
+        });
+        if (cancelled) return;
+        setMarkdownOnlyTree(buildMarkdownOnlyTree(normalizeFetchedNodes(raw)));
+      } catch (err) {
+        console.error("Failed to list markdown files:", err);
+        if (!cancelled) {
+          setMarkdownOnlyTree(null);
+          setBanner({
+            type: "err",
+            text: err instanceof Error ? err.message : "Failed to load Markdown file list",
+          });
+        }
+      } finally {
+        if (!cancelled) setMarkdownOnlyTreeLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [markdownOnly, activeWorkspaceId, workspaces, files]);
 
   useEffect(() => {
     const query = fileNameQuery.trim();
@@ -586,13 +631,13 @@ export function FileExplorerPanel({
     });
   };
 
-  const files = activeWorkspaceId ? fileTree[activeWorkspaceId] ?? EMPTY_FILE_LIST : EMPTY_FILE_LIST;
   const nameQuery = fileNameQuery.trim();
   const isWorkspaceSearch = nameQuery.length > 0;
-  const displayedFiles = useMemo(
-    () => (markdownOnly ? filterTreeMarkdownOnly(files) : files),
-    [files, markdownOnly]
-  );
+  const displayedFiles = useMemo(() => {
+    if (!markdownOnly) return files;
+    if (markdownOnlyTree) return markdownOnlyTree;
+    return filterTreeMarkdownOnly(files);
+  }, [files, markdownOnly, markdownOnlyTree]);
   const filterExcludesEverything = isWorkspaceSearch
     ? !searchLoading && searchResults.length === 0
     : files.length > 0 && markdownOnly && displayedFiles.length === 0;
@@ -727,8 +772,8 @@ export function FileExplorerPanel({
             onChange={(e) => onMarkdownOnlyChange(e.target.checked)}
             className="rounded border-slack-border bg-slack-bg text-slack-accent focus:ring-slack-accent"
           />
-          <span title="Show only .md, .markdown, .mdx, and .mmd files (folders stay if they contain matches)">
-            Markdown files only
+          <span title="Show .md, .markdown, .mdx, and .mmd files; folders only on paths to those files">
+            Markdown & .mmd only
           </span>
         </label>
       </div>
@@ -753,11 +798,11 @@ export function FileExplorerPanel({
               Searching workspace…
             </div>
           </div>
-        ) : loadingFiles && !isWorkspaceSearch ? (
+        ) : (loadingFiles || (markdownOnly && markdownOnlyTreeLoading)) && !isWorkspaceSearch ? (
           <div className="flex items-center justify-center h-32">
             <div className="flex items-center gap-2 text-slack-textMuted">
               <div className="w-4 h-4 border border-slack-textMuted border-t-transparent rounded-full animate-spin" />
-              Loading files...
+              {markdownOnly && markdownOnlyTreeLoading ? "Loading Markdown files…" : "Loading files..."}
             </div>
           </div>
         ) : !isWorkspaceSearch && files.length === 0 ? (
@@ -771,7 +816,7 @@ export function FileExplorerPanel({
             <div className="text-sm text-slack-textMuted">
               {isWorkspaceSearch
                 ? "No files match that name in this workspace"
-                : "No Markdown files in this workspace"}
+                : "No .md, .mdx, or .mmd files in this workspace"}
             </div>
             {isWorkspaceSearch ? (
               <button

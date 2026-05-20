@@ -58,6 +58,8 @@ interface FileExplorerState {
   removeWorkspace: (workspaceId: string) => Promise<void>;
   setActiveWorkspace: (workspaceId: string) => void;
   loadFiles: (workspaceId: string, path?: string) => Promise<void>;
+  /** Reload root and any expanded directories (e.g. after external file changes). */
+  refreshFileTree: (workspaceId: string) => Promise<void>;
   toggleExpanded: (path: string) => void;
   setSelectedPath: (path: string | null) => void;
   createFile: (workspaceId: string, path: string, content?: string) => Promise<void>;
@@ -193,6 +195,18 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
         ...(isRootLoad ? { loadingFiles: false } : {}),
         error: error instanceof Error ? error.message : "Failed to load files",
       });
+    }
+  },
+
+  refreshFileTree: async (workspaceId) => {
+    const state = get();
+    await get().loadFiles(workspaceId, "/");
+    const expanded = Object.entries(state.expandedPaths)
+      .filter(([, open]) => open)
+      .map(([p]) => p)
+      .filter((p) => p.length > 0 && p !== "/");
+    for (const path of expanded) {
+      await get().loadFiles(workspaceId, path);
     }
   },
 
