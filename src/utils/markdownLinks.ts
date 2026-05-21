@@ -26,6 +26,22 @@ export function isExternalHref(href: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(href.trim());
 }
 
+/** Only http(s) and mailto may be opened via window.open (blocks file:, javascript:, data:, etc.). */
+export function isSafeExternalHref(href: string): boolean {
+  const trimmed = href.trim();
+  if (!trimmed || trimmed.startsWith("//")) return false;
+  try {
+    const url = new URL(trimmed);
+    return (
+      url.protocol === "http:" ||
+      url.protocol === "https:" ||
+      url.protocol === "mailto:"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function isMarkdownFilePath(path: string): boolean {
   const base = path.split(/[#?]/)[0].trim().toLowerCase();
   return base.endsWith(".md") || base.endsWith(".markdown");
@@ -48,6 +64,7 @@ export function resolveMarkdownLinkAction(
   }
 
   if (isExternalHref(trimmed)) {
+    if (!isSafeExternalHref(trimmed)) return null;
     return { type: "external", url: trimmed };
   }
 

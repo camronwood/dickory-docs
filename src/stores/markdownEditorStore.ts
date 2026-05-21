@@ -73,13 +73,13 @@ export const useMarkdownEditorStore = create<MarkdownEditorState>((set, get) => 
 
   save: async () => {
     const state = get();
-    if (!state.path || !state.workspaceRoot.trim()) return false;
+    if (!state.path || !state.workspaceId) return false;
 
     set({ saving: true, error: null });
 
     try {
       await invoke("write_file_text", {
-        root: state.workspaceRoot,
+        workspaceId: state.workspaceId,
         relativePath: state.path,
         content: state.content,
       });
@@ -101,7 +101,7 @@ export const useMarkdownEditorStore = create<MarkdownEditorState>((set, get) => 
 
   reloadFromDisk: async () => {
     const state = get();
-    if (!state.path || !state.workspaceRoot.trim()) return false;
+    if (!state.path || !state.workspaceId) return false;
 
     if (state.isDirty) {
       const ok = window.confirm(
@@ -112,7 +112,7 @@ export const useMarkdownEditorStore = create<MarkdownEditorState>((set, get) => 
 
     try {
       const fileContent = await invoke<string>("read_file_text", {
-        root: state.workspaceRoot,
+        workspaceId: state.workspaceId,
         relativePath: state.path,
       });
       const hash = getContentHash(fileContent);
@@ -167,11 +167,11 @@ export const useMarkdownEditorStore = create<MarkdownEditorState>((set, get) => 
 /** Poll disk; if content changed externally, flag or auto-reload when clean. */
 export async function checkDiskForExternalChanges(): Promise<void> {
   const state = useMarkdownEditorStore.getState();
-  if (!state.path || !state.workspaceRoot.trim()) return;
+  if (!state.path || !state.workspaceId) return;
 
   try {
     const fileContent = await invoke<string>("read_file_text", {
-      root: state.workspaceRoot,
+      workspaceId: state.workspaceId,
       relativePath: state.path,
     });
     const hash = getContentHash(fileContent);

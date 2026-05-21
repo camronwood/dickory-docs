@@ -1,7 +1,7 @@
 {
   "name": "dickory-docs",
   "private": true,
-  "version": "0.3.7",
+  "version": "0.3.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "tauri:build:debug": "tauri build --debug --features custom-protocol",
     "icons": "(test -d .venv-icon || (python3 -m venv .venv-icon && .venv-icon/bin/pip install -q Pillow numpy)) && .venv-icon/bin/python scripts/knock_out_background.py assets/source-app-icon.png -o app-icon-source.png --bg ${ICON_BG:-light} && npx @tauri-apps/cli icon app-icon-source.png && cp src-tauri/icons/32x32.png public/favicon.png && mkdir -p docs/assets/icon && cp app-icon-source.png docs/assets/icon/og-image.png && cp src-tauri/icons/32x32.png docs/assets/icon/favicon-32.png && cp src-tauri/icons/128x128@2x.png docs/assets/icon/apple-touch-icon.png && cp src-tauri/icons/128x128.png docs/assets/icon/logo-128.png",
     "icons:dark": "ICON_BG=dark npm run icons",
-    "test": "node --experimental-strip-types scripts/test_markdown_fence_regex.mts && node --experimental-strip-types scripts/test_markdown_only_tree.mts && node scripts/test_mermaid_layouts.mjs",
+    "test": "node --experimental-strip-types scripts/test_markdown_fence_regex.mts && node --experimental-strip-types scripts/test_markdown_only_tree.mts && node --experimental-strip-types scripts/test_workspace_order.mts && node --experimental-strip-types scripts/test_active_workspace_preference.mts && node --experimental-strip-types scripts/test_safe_external_url.mts && node scripts/test_mermaid_layouts.mjs",
     "test:mermaid": "node scripts/test_mermaid_layouts.mjs"
   },
   "dependencies": {
@@ -21,7 +21,7 @@
     "@mermaid-js/layout-tidy-tree": "^0.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@tauri-apps/api": "^1.5.3",
-    "dompurify": "^3.0.8",
+    "dompurify": "^3.4.5",
     "github-slugger": "^2.0.0",
     "marked": "^12.0.0",
     "mermaid": "^11.12.0",

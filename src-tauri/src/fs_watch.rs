@@ -101,11 +101,12 @@ impl FsWatchState {
 
 #[tauri::command]
 pub fn workspace_fs_watch_set(
-    root: String,
     workspace_id: String,
     state: tauri::State<FsWatchState>,
     app: AppHandle,
 ) -> Result<(), String> {
+    let root_canon = crate::workspace_root_canonical(&workspace_id)?;
+    let root = root_canon.to_string_lossy().into_owned();
     state.set_watch(&root, workspace_id, app)
 }
 

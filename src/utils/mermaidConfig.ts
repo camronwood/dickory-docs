@@ -8,7 +8,8 @@ mermaid.registerLayoutLoaders(tidyTreeLayouts);
 mermaid.initialize({
   startOnLoad: false,
   theme: "dark",
-  securityLevel: "loose",
+  /** Untrusted diagram text comes from local Markdown — antiscript blocks script-like SVG/HTML. */
+  securityLevel: "antiscript",
   fontFamily: "ui-monospace, monospace",
 });
 

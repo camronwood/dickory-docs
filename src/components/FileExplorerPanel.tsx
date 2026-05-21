@@ -4,6 +4,8 @@ import type { FileNode } from "../stores/fileExplorerStore";
 import { formatSearchResultPath } from "../utils/workspaceFileSearch";
 import { buildMarkdownOnlyTree } from "../utils/markdownOnlyTree";
 import { useWorkspaceFsWatch } from "../hooks/useWorkspaceFsWatch";
+import { WorkspaceTabBar } from "./WorkspaceTabBar";
+import { workspacesForTabBar } from "../utils/workspaceOrder";
 import { open } from "@tauri-apps/api/dialog";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useMarkdownEditorStore } from "../stores/markdownEditorStore";
@@ -16,6 +18,7 @@ export interface FileExplorerPanelProps {
   onDismissGalleryScanError?: () => void;
   markdownOnly: boolean;
   onMarkdownOnlyChange: (value: boolean) => void;
+  onOpenWorkspaceSwitcher?: () => void;
 }
 
 const MIN_WIDTH = 200;
@@ -76,6 +79,7 @@ export function FileExplorerPanel({
   onDismissGalleryScanError,
   markdownOnly,
   onMarkdownOnlyChange,
+  onOpenWorkspaceSwitcher,
 }: FileExplorerPanelProps) {
   const {
     workspaces,
@@ -87,7 +91,7 @@ export function FileExplorerPanel({
     error,
     loadWorkspaces,
     addWorkspace,
-    setActiveWorkspace,
+    selectWorkspace,
     loadFiles,
     toggleExpanded,
     setSelectedPath,
@@ -152,7 +156,7 @@ export function FileExplorerPanel({
     }
   }, [activeWorkspaceId, loadFiles]);
 
-  useWorkspaceFsWatch(activeWorkspaceId, workspaces);
+  useWorkspaceFsWatch(activeWorkspaceId);
 
   const files = activeWorkspaceId ? fileTree[activeWorkspaceId] ?? EMPTY_FILE_LIST : EMPTY_FILE_LIST;
 
@@ -172,7 +176,7 @@ export function FileExplorerPanel({
     void (async () => {
       try {
         const raw = await invoke<FileNode[]>("workspace_list_markdown_files", {
-          root: workspace.path,
+          workspaceId: workspace.id,
         });
         if (cancelled) return;
         setMarkdownOnlyTree(buildMarkdownOnlyTree(normalizeFetchedNodes(raw)));
@@ -214,7 +218,7 @@ export function FileExplorerPanel({
           const response = await invoke<{ results: FileNode[]; truncated: boolean }>(
             "workspace_search_files",
             {
-              root: workspace.path,
+              workspaceId: workspace.id,
               query,
               markdownOnly,
             }
@@ -373,7 +377,7 @@ export function FileExplorerPanel({
           if (isMarkdownPath(file.path, file.name)) {
             const rel = file.path.replace(/^\/+/, "");
             const fileContent = await invoke<string>("read_file_text", {
-              root: activeWorkspace.path,
+              workspaceId: activeWorkspace.id,
               relativePath: rel,
             });
             useMarkdownEditorStore
@@ -382,7 +386,7 @@ export function FileExplorerPanel({
             onSelectMarkdown?.(activeWorkspace.id, file.path);
           } else {
             const content = await invoke<string>("read_file_text", {
-              root: activeWorkspace.path,
+              workspaceId: activeWorkspace.id,
               relativePath: file.path.replace(/^\/+/, ""),
             });
             onSelectTextFile?.(activeWorkspace.id, file.path, content);
@@ -642,6 +646,12 @@ export function FileExplorerPanel({
     ? !searchLoading && searchResults.length === 0
     : files.length > 0 && markdownOnly && displayedFiles.length === 0;
 
+  const workspaceSwitcherOverflow = useMemo(
+    () => workspacesForTabBar(workspaces, activeWorkspaceId).overflowCount,
+    [workspaces, activeWorkspaceId]
+  );
+  const showWorkspaceSwitcher = workspaces.length > 1 && onOpenWorkspaceSwitcher;
+
   return (
     <div
       className="border-r border-slack-border bg-slack-bg flex flex-col h-full relative flex-shrink-0"
@@ -681,6 +691,21 @@ export function FileExplorerPanel({
               </svg>
             </button>
           )}
+          {showWorkspaceSwitcher && (
+            <button
+              type="button"
+              onClick={onOpenWorkspaceSwitcher}
+              className="text-slack-textMuted hover:text-slack-text transition-colors flex-shrink-0 px-1 py-0.5 text-xs font-medium"
+              title="All workspaces (⌘⇧W / Ctrl+Shift+W)"
+              aria-label={
+                workspaceSwitcherOverflow > 0
+                  ? `All workspaces, ${workspaceSwitcherOverflow} not shown in tabs`
+                  : "All workspaces"
+              }
+            >
+              {workspaceSwitcherOverflow > 0 ? `··· +${workspaceSwitcherOverflow}` : "···"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowAddWorkspace(true)}
@@ -716,40 +741,13 @@ export function FileExplorerPanel({
         </div>
       )}
 
-      <div className="px-4 py-2 border-b border-slack-border bg-slack-bgHover flex-shrink-0 relative z-10">
-        <div className="flex gap-1 overflow-x-auto">
-          {workspaces.map((workspace) => (
-            <div
-              key={workspace.id}
-              onClick={() => setActiveWorkspace(workspace.id)}
-              onKeyDown={(e) => e.key === "Enter" && setActiveWorkspace(workspace.id)}
-              role="button"
-              tabIndex={0}
-              className={`group flex items-center gap-1 px-3 py-1 text-xs rounded transition-colors whitespace-nowrap cursor-pointer ${
-                activeWorkspaceId === workspace.id
-                  ? "bg-slack-accent text-white"
-                  : "bg-slack-bgHover text-slack-textMuted hover:text-slack-text"
-              }`}
-              title={workspace.path}
-            >
-              <span>{workspace.name}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveWorkspace(e, workspace.id, workspace.name)}
-                className={`ml-1 p-0.5 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity ${
-                  activeWorkspaceId === workspace.id
-                    ? "hover:bg-white/20"
-                    : "hover:bg-slack-border"
-                }`}
-                title={`Remove ${workspace.name}`}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
+      <div className="px-4 py-2 border-b border-slack-border bg-slack-bgHover flex-shrink-0 relative z-10 min-w-0">
+        <WorkspaceTabBar
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSelect={(id) => void selectWorkspace(id)}
+          onRemove={handleRemoveWorkspace}
+        />
       </div>
 
       <div className="flex-shrink-0 px-4 py-2 border-b border-slack-border bg-slack-bgHover">

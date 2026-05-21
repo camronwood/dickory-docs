@@ -10,16 +10,12 @@ const REFRESH_DEBOUNCE_MS = 150;
  * Watch the active workspace on disk and refresh the file tree when files change
  * outside the app (editors, terminals, git, etc.).
  */
-export function useWorkspaceFsWatch(
-  activeWorkspaceId: string | null,
-  workspaces: { id: string; path: string }[]
-): void {
+export function useWorkspaceFsWatch(activeWorkspaceId: string | null): void {
   const refreshFileTree = useFileExplorerStore((s) => s.refreshFileTree);
   const refreshTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const workspace = workspaces.find((w) => w.id === activeWorkspaceId);
-    if (!workspace) {
+    if (!activeWorkspaceId) {
       void invoke("workspace_fs_watch_clear").catch((err) =>
         console.error("Failed to clear workspace file watch:", err)
       );
@@ -27,14 +23,13 @@ export function useWorkspaceFsWatch(
     }
 
     void invoke("workspace_fs_watch_set", {
-      root: workspace.path,
-      workspaceId: workspace.id,
+      workspaceId: activeWorkspaceId,
     }).catch((err) => console.error("Failed to start workspace file watch:", err));
 
     return () => {
       void invoke("workspace_fs_watch_clear").catch(() => {});
     };
-  }, [activeWorkspaceId, workspaces]);
+  }, [activeWorkspaceId]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;

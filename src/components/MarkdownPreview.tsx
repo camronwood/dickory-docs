@@ -16,7 +16,7 @@ export type { OpenGalleryFromPreviewOptions };
 export type MarkdownPreviewLayout = "standalone" | "embedded";
 
 interface MarkdownPreviewProps {
-  workspaceRoot: string;
+  workspaceId: string;
   filePath: string;
   layout?: MarkdownPreviewLayout;
   onOpenGallery?: (opts: OpenGalleryFromPreviewOptions) => void;
@@ -24,7 +24,7 @@ interface MarkdownPreviewProps {
 }
 
 export function MarkdownPreview({
-  workspaceRoot,
+  workspaceId,
   filePath,
   layout = "standalone",
   onOpenGallery,
@@ -58,14 +58,14 @@ export function MarkdownPreview({
 
     try {
       setError(null);
-      if (!workspaceRoot.trim()) {
+      if (!workspaceId) {
         setError("Workspace is not available.");
         setLoading(false);
         return;
       }
       const rel = filePath.replace(/^\/+/, "");
       const fileContent = await invoke<string>("read_file_text", {
-        root: workspaceRoot,
+        workspaceId,
         relativePath: rel,
       });
       const newHash = getContentHash(fileContent);
@@ -97,7 +97,7 @@ export function MarkdownPreview({
     setDocSearchActiveIndex(0);
     setDocSearchMatchCount(0);
     fetchContent();
-  }, [workspaceRoot, filePath]);
+  }, [workspaceId, filePath]);
 
   useEffect(() => {
     setDocSearchActiveIndex(0);
@@ -115,7 +115,7 @@ export function MarkdownPreview({
         window.clearInterval(intervalRef.current);
       }
     };
-  }, [loading, workspaceRoot, filePath]);
+  }, [loading, workspaceId, filePath]);
 
   useEffect(() => {
     if (!embedded) {

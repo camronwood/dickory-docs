@@ -110,6 +110,17 @@ fn save_workspaces_inner(list: &[WorkspaceRecord]) -> Result<(), String> {
     fs::rename(&tmp, &p).map_err(|e| e.to_string())
 }
 
+/// Canonical root for a workspace registered in `workspaces.json`.
+/// File IPC commands must take `workspace_id` only — never a client-supplied root path.
+pub fn workspace_root_canonical(workspace_id: &str) -> Result<PathBuf, String> {
+    let list = load_workspaces_inner()?;
+    let ws = list
+        .iter()
+        .find(|w| w.id == workspace_id)
+        .ok_or_else(|| "workspace not found".to_string())?;
+    canonical_workspace_dir(&ws.path)
+}
+
 /// Reject `..` and absolute components; return normalized relative path using `/`.
 fn normalize_rel(rel: &str) -> Result<String, String> {
     let rel = rel.trim().replace('\\', "/");
@@ -137,6 +148,9 @@ fn root_path_buf(root: &str) -> Result<PathBuf, String> {
 }
 
 /// Resolve `rel` under `root` (must already be canonical). Works for not-yet-existing files.
+/// Max bytes read into memory for a single file (DoS guard).
+const MAX_READ_FILE_BYTES: u64 = 32 * 1024 * 1024;
+
 fn resolve_under_root(root_canon: &Path, rel: &str) -> Result<PathBuf, String> {
     let rel = normalize_rel(rel)?;
     let mut cur = root_canon.to_path_buf();
@@ -153,6 +167,35 @@ fn resolve_under_root(root_canon: &Path, rel: &str) -> Result<PathBuf, String> {
         }
     }
     Ok(cur)
+}
+
+/// Canonicalize a resolved path and ensure it remains under `root_canon` (blocks symlink escape).
+fn ensure_under_root(root_canon: &Path, resolved: &Path) -> Result<PathBuf, String> {
+    let target = if resolved.exists() {
+        resolved.canonicalize().map_err(|e| e.to_string())?
+    } else {
+        let parent = resolved
+            .parent()
+            .ok_or_else(|| "invalid path".to_string())?;
+        let file_name = resolved
+            .file_name()
+            .ok_or_else(|| "invalid path".to_string())?;
+        let parent_canon = if parent.as_os_str().is_empty() {
+            root_canon.to_path_buf()
+        } else if parent.exists() {
+            parent.canonicalize().map_err(|e| e.to_string())?
+        } else {
+            ensure_under_root(root_canon, parent)?
+        };
+        if !parent_canon.starts_with(root_canon) {
+            return Err("path escapes workspace root".into());
+        }
+        parent_canon.join(file_name)
+    };
+    if !target.starts_with(root_canon) {
+        return Err("path escapes workspace root".into());
+    }
+    Ok(target)
 }
 
 fn rel_path_from_root(root_canon: &Path, full: &Path) -> Result<String, String> {
@@ -238,9 +281,21 @@ fn workspace_remove(id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn dir_list(root: String, relative_path: String) -> Result<Vec<FileNodeOut>, String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn workspace_touch(id: String) -> Result<WorkspaceRecord, String> {
+    let mut list = load_workspaces_inner()?;
+    let ws = list
+        .iter_mut()
+        .find(|w| w.id == id)
+        .ok_or_else(|| "workspace not found".to_string())?;
+    ws.last_used = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let updated = ws.clone();
+    save_workspaces_inner(&list)?;
+    Ok(updated)
+}
+
+#[tauri::command]
+fn dir_list(workspace_id: String, relative_path: String) -> Result<Vec<FileNodeOut>, String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let rel = normalize_rel(&relative_path)?;
     let dir = resolve_under_root(&root_canon, &rel)?;
     if !dir.is_dir() {
@@ -271,21 +326,32 @@ fn dir_list(root: String, relative_path: String) -> Result<Vec<FileNodeOut>, Str
 }
 
 #[tauri::command]
-fn read_file_text(root: String, relative_path: String) -> Result<String, String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn read_file_text(workspace_id: String, relative_path: String) -> Result<String, String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let target = resolve_under_root(&root_canon, &relative_path)?;
+    let target = ensure_under_root(&root_canon, &target)?;
     if !target.is_file() {
         return Err("not a file".into());
+    }
+    let meta = fs::metadata(&target).map_err(|e| e.to_string())?;
+    if meta.len() > MAX_READ_FILE_BYTES {
+        return Err(format!(
+            "file too large (max {} MiB)",
+            MAX_READ_FILE_BYTES / (1024 * 1024)
+        ));
     }
     fs::read_to_string(&target).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn write_file_text(root: String, relative_path: String, content: String) -> Result<(), String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn write_file_text(
+    workspace_id: String,
+    relative_path: String,
+    content: String,
+) -> Result<(), String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let target = resolve_under_root(&root_canon, &relative_path)?;
+    let target = ensure_under_root(&root_canon, &target)?;
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -293,19 +359,24 @@ fn write_file_text(root: String, relative_path: String, content: String) -> Resu
 }
 
 #[tauri::command]
-fn create_folder(root: String, relative_path: String) -> Result<(), String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn create_folder(workspace_id: String, relative_path: String) -> Result<(), String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let target = resolve_under_root(&root_canon, &relative_path)?;
+    let target = ensure_under_root(&root_canon, &target)?;
     fs::create_dir_all(&target).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn rename_entry(root: String, old_path: String, new_path: String) -> Result<(), String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn rename_entry(
+    workspace_id: String,
+    old_path: String,
+    new_path: String,
+) -> Result<(), String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let from = resolve_under_root(&root_canon, &old_path)?;
+    let from = ensure_under_root(&root_canon, &from)?;
     let to = resolve_under_root(&root_canon, &new_path)?;
+    let to = ensure_under_root(&root_canon, &to)?;
     if let Some(parent) = to.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -555,15 +626,14 @@ pub struct MermaidScanOut {
 }
 
 #[tauri::command]
-fn workspace_scan_mermaid(root: String) -> Result<MermaidScanOut, String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn workspace_scan_mermaid(workspace_id: String) -> Result<MermaidScanOut, String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let mut blocks: Vec<MermaidBlockOut> = Vec::new();
     let mut markdown_files: u32 = 0;
     let mut files_unreadable: u32 = 0;
 
     for entry in WalkDir::new(&root_canon)
-        .follow_links(true)
+        .follow_links(false)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
@@ -593,7 +663,15 @@ fn workspace_scan_mermaid(root: String) -> Result<MermaidScanOut, String> {
             files_unreadable += 1;
             continue;
         };
-        let text = match fs::read_to_string(full) {
+        let text = match fs::metadata(full).and_then(|meta| {
+            if meta.len() > MAX_READ_FILE_BYTES {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "file too large",
+                ));
+            }
+            fs::read_to_string(full)
+        }) {
             Ok(t) => t,
             Err(_) => {
                 files_unreadable += 1;
@@ -647,7 +725,7 @@ pub struct FileSearchResult {
 /// Walk the full workspace and return entries whose file or folder name contains `query`.
 #[tauri::command]
 fn workspace_search_files(
-    root: String,
+    workspace_id: String,
     query: String,
     markdown_only: bool,
 ) -> Result<FileSearchResult, String> {
@@ -659,8 +737,7 @@ fn workspace_search_files(
         });
     }
 
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let mut out: Vec<FileNodeOut> = Vec::new();
 
     for entry in WalkDir::new(&root_canon)
@@ -705,9 +782,8 @@ fn workspace_search_files(
 
 /// All `.md`, `.markdown`, `.mdx`, and `.mmd` files under a workspace (for markdown-only tree).
 #[tauri::command]
-fn workspace_list_markdown_files(root: String) -> Result<Vec<FileNodeOut>, String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn workspace_list_markdown_files(workspace_id: String) -> Result<Vec<FileNodeOut>, String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let mut out: Vec<FileNodeOut> = Vec::new();
 
     for entry in WalkDir::new(&root_canon)
@@ -920,11 +996,14 @@ fn resolve_external_file(path: String) -> Result<OpenFileResolution, String> {
 }
 
 #[tauri::command]
-fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
-    let root_pb = root_path_buf(&root)?;
-    let root_canon = root_pb.canonicalize().map_err(|e| e.to_string())?;
+fn delete_entry(workspace_id: String, relative_path: String) -> Result<(), String> {
+    let root_canon = workspace_root_canonical(&workspace_id)?;
     let target = resolve_under_root(&root_canon, &relative_path)?;
+    let target = ensure_under_root(&root_canon, &target)?;
     let meta = fs::symlink_metadata(&target).map_err(|e| e.to_string())?;
+    if meta.file_type().is_symlink() {
+        return Err("cannot delete symlinks".into());
+    }
     if meta.is_dir() {
         fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
     } else {
@@ -935,8 +1014,54 @@ fn delete_entry(root: String, relative_path: String) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{extract_mermaid_blocks, extract_mermaid_blocks_from_markdown};
+    use super::{
+        ensure_under_root, extract_mermaid_blocks, extract_mermaid_blocks_from_markdown,
+        normalize_rel, resolve_under_root, workspace_root_canonical,
+    };
+    use std::fs;
     use std::path::Path;
+
+    #[test]
+    fn workspace_root_canonical_rejects_unknown_id() {
+        assert!(workspace_root_canonical("ws-nonexistent-id").is_err());
+    }
+
+    #[test]
+    fn normalize_rel_rejects_parent_segments() {
+        assert!(normalize_rel("../secret").is_err());
+        assert!(normalize_rel("docs/../../etc/passwd").is_err());
+        assert_eq!(normalize_rel("docs/a.md").unwrap(), "docs/a.md");
+    }
+
+    #[test]
+    fn resolve_under_root_stays_inside() {
+        let tmp = std::env::temp_dir().join(format!("dickory-path-test-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&tmp).unwrap();
+        let root_canon = tmp.canonicalize().unwrap();
+        let inside = resolve_under_root(&root_canon, "sub/file.md").unwrap();
+        assert!(inside.starts_with(&root_canon));
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ensure_under_root_rejects_symlink_outside() {
+        let tmp = std::env::temp_dir().join(format!("dickory-sym-test-{}", uuid::Uuid::new_v4()));
+        let outside = std::env::temp_dir().join(format!("dickory-out-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&tmp).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+        let secret = outside.join("secret.txt");
+        fs::write(&secret, "nope").unwrap();
+        let link = tmp.join("link.md");
+        std::os::unix::fs::symlink(&secret, &link).unwrap();
+        let root_canon = tmp.canonicalize().unwrap();
+        // Symlink must not resolve to a path outside the workspace (walk + canonicalize).
+        assert!(resolve_under_root(&root_canon, "link.md").is_err());
+        let _ = fs::remove_file(&link);
+        let _ = fs::remove_file(&secret);
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::remove_dir_all(&outside);
+    }
 
     #[test]
     fn mermaid_fence_with_newline() {
@@ -1030,6 +1155,7 @@ fn main() {
             workspaces_load,
             workspace_add,
             workspace_remove,
+            workspace_touch,
             dir_list,
             read_file_text,
             write_file_text,

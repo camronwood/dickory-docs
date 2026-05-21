@@ -17,8 +17,8 @@
 
   <div class="dev-banner" role="status">
     <div class="wrap dev-banner-inner">
-      <strong>Latest: v0.3.7</strong>
-      <span><strong>File tree</strong> — Markdown/.mmd filter &amp; live refresh · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="release-notes.html#v0-3-7">Release notes</a></span>
+      <strong>Latest: v0.3.8</strong>
+      <span><strong>Workspaces</strong> — MRU tabs, searchable switcher, scoped file access · <a href="https://github.com/camronwood/dickory-docs/releases/latest">Download</a> · <a href="release-notes.html#v0-3-8">Release notes</a></span>
     </div>
   </div>
 
@@ -47,6 +47,7 @@
 
     <nav class="release-jump" aria-label="Jump to version">
       <span class="release-jump-label">Jump:</span>
+      <a href="#v0-3-8">v0.3.8</a>
       <a href="#v0-3-7">v0.3.7</a>
       <a href="#v0-3-6">v0.3.6</a>
       <a href="#v0-3-4">v0.3.4</a>
@@ -60,6 +61,23 @@
     </nav>
 
     <article class="feature-prose">
+      <h2 id="v0-3-8" class="release-version-heading">v0.3.8 <span class="release-date">· May 21, 2026</span></h2>
+      <p>Workspace switching scales when you have many folders on disk.</p>
+      <h3>Desktop</h3>
+      <ul>
+        <li><strong>MRU workspace tabs</strong> — the explorer shows the active workspace plus recently used roots (no endless horizontal scroll).</li>
+        <li><strong>Workspace switcher</strong> — <strong>···</strong> overflow or <strong>⌘⇧W</strong> / <strong>Ctrl+Shift+W</strong> opens a searchable list (name, path, git branch).</li>
+        <li><strong>Last used</strong> — switching workspaces updates <code>last_used</code> in persisted <code>workspaces.json</code>.</li>
+        <li><strong>Remember active</strong> — last selected workspace is restored on launch (<code>localStorage</code>).</li>
+        <li><strong>Workspace-scoped file access</strong> — read/write/list commands resolve paths only from registered workspace ids (not client-supplied roots).</li>
+        <li><strong>Switcher in header</strong> — <strong>···</strong> beside the diagram gallery opens the full workspace list.</li>
+      </ul>
+      <h3>Security</h3>
+      <ul>
+        <li>File IPC bound to workspace ids; symlink escape and 32&nbsp;MiB read cap.</li>
+        <li>Markdown links limited to <code>http</code>, <code>https</code>, and <code>mailto</code>; Mermaid <code>antiscript</code> mode; DOMPurify updated.</li>
+      </ul>
+
       <h2 id="v0-3-7" class="release-version-heading">v0.3.7 <span class="release-date">· May 20, 2026</span></h2>
       <p>Smarter <strong>Markdown-only</strong> file tree and automatic refresh when files change outside the app.</p>
       <h3>Desktop</h3>

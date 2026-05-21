@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/tauri";
+import {
+  clearActiveWorkspaceId,
+  loadActiveWorkspaceId,
+  saveActiveWorkspaceId,
+} from "../config/activeWorkspacePreference";
 
 export interface Workspace {
   id: string;
@@ -22,8 +27,8 @@ export interface FileNode {
   path: string;
 }
 
-function workspaceRoot(state: FileExplorerState, workspaceId: string): string | null {
-  return state.workspaces.find((w) => w.id === workspaceId)?.path ?? null;
+function hasWorkspace(state: FileExplorerState, workspaceId: string): boolean {
+  return state.workspaces.some((w) => w.id === workspaceId);
 }
 
 /** API uses "" for workspace root; tree uses `/` only in UI for legacy checks. */
@@ -57,6 +62,8 @@ interface FileExplorerState {
   addWorkspace: (name: string, path: string) => Promise<Workspace>;
   removeWorkspace: (workspaceId: string) => Promise<void>;
   setActiveWorkspace: (workspaceId: string) => void;
+  /** Switch workspace and persist last_used (MRU tab bar + switcher). */
+  selectWorkspace: (workspaceId: string) => Promise<void>;
   loadFiles: (workspaceId: string, path?: string) => Promise<void>;
   /** Reload root and any expanded directories (e.g. after external file changes). */
   refreshFileTree: (workspaceId: string) => Promise<void>;
@@ -88,9 +95,14 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
     set({ loadingWorkspaces: true, error: null });
     try {
       const workspaces = await invoke<Workspace[]>("workspaces_load");
+      const savedId = loadActiveWorkspaceId();
+      const activeWorkspaceId =
+        savedId && workspaces.some((w) => w.id === savedId)
+          ? savedId
+          : workspaces[0]?.id || null;
       set({
         workspaces,
-        activeWorkspaceId: workspaces[0]?.id || null,
+        activeWorkspaceId,
         loadingWorkspaces: false,
       });
     } catch (error) {
@@ -109,6 +121,7 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
         workspaces: [...state.workspaces, workspace],
         activeWorkspaceId: workspace.id,
       }));
+      saveActiveWorkspaceId(workspace.id);
       return workspace;
     } catch (error) {
       console.error("Failed to add workspace:", error);
@@ -126,6 +139,11 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
           state.activeWorkspaceId === workspaceId
             ? newWorkspaces[0]?.id || null
             : state.activeWorkspaceId;
+        if (newActiveWorkspaceId) {
+          saveActiveWorkspaceId(newActiveWorkspaceId);
+        } else {
+          clearActiveWorkspaceId();
+        }
         const { [workspaceId]: _, ...newFileTree } = state.fileTree;
         return {
           workspaces: newWorkspaces,
@@ -143,10 +161,26 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
     set({ activeWorkspaceId: workspaceId });
   },
 
+  selectWorkspace: async (workspaceId) => {
+    const { activeWorkspaceId, workspaces } = get();
+    if (!workspaces.some((w) => w.id === workspaceId)) return;
+    if (activeWorkspaceId === workspaceId) return;
+
+    set({ activeWorkspaceId: workspaceId });
+    saveActiveWorkspaceId(workspaceId);
+    try {
+      const updated = await invoke<Workspace>("workspace_touch", { id: workspaceId });
+      set((state) => ({
+        workspaces: state.workspaces.map((w) => (w.id === workspaceId ? updated : w)),
+      }));
+    } catch (error) {
+      console.error("Failed to touch workspace:", error);
+    }
+  },
+
   loadFiles: async (workspaceId, path = "/") => {
-    const root = workspaceRoot(get(), workspaceId);
-    if (!root) {
-      set({ error: "No workspace root", loadingFiles: false });
+    if (!hasWorkspace(get(), workspaceId)) {
+      set({ error: "Workspace not found", loadingFiles: false });
       return;
     }
 
@@ -158,7 +192,7 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
     try {
       const rel = toDirRelativePath(path);
       const rawFiles = await invoke<FileNode[]>("dir_list", {
-        root,
+        workspaceId,
         relativePath: rel,
       });
       const files = normalizeFetchedNodes(rawFiles);
@@ -224,11 +258,10 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
   },
 
   createFile: async (workspaceId, path, content = "") => {
-    const root = workspaceRoot(get(), workspaceId);
-    if (!root) throw new Error("No workspace root");
+    if (!hasWorkspace(get(), workspaceId)) throw new Error("Workspace not found");
     try {
       await invoke("write_file_text", {
-        root,
+        workspaceId,
         relativePath: toDirRelativePath(path),
         content,
       });
@@ -241,11 +274,10 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
   },
 
   createFolder: async (workspaceId, path) => {
-    const root = workspaceRoot(get(), workspaceId);
-    if (!root) throw new Error("No workspace root");
+    if (!hasWorkspace(get(), workspaceId)) throw new Error("Workspace not found");
     try {
       await invoke("create_folder", {
-        root,
+        workspaceId,
         relativePath: toDirRelativePath(path),
       });
       await get().loadFiles(workspaceId);
@@ -257,11 +289,10 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
   },
 
   renameFile: async (workspaceId, oldPath, newPath) => {
-    const root = workspaceRoot(get(), workspaceId);
-    if (!root) throw new Error("No workspace root");
+    if (!hasWorkspace(get(), workspaceId)) throw new Error("Workspace not found");
     try {
       await invoke("rename_entry", {
-        root,
+        workspaceId,
         oldPath: toDirRelativePath(oldPath),
         newPath: toDirRelativePath(newPath),
       });
@@ -274,11 +305,10 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
   },
 
   deleteFile: async (workspaceId, path) => {
-    const root = workspaceRoot(get(), workspaceId);
-    if (!root) throw new Error("No workspace root");
+    if (!hasWorkspace(get(), workspaceId)) throw new Error("Workspace not found");
     try {
       await invoke("delete_entry", {
-        root,
+        workspaceId,
         relativePath: toDirRelativePath(path),
       });
       await get().loadFiles(workspaceId);

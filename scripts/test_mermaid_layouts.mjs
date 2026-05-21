@@ -62,7 +62,7 @@ async function main() {
   mermaid.initialize({
     startOnLoad: false,
     theme: "dark",
-    securityLevel: "loose",
+    securityLevel: "antiscript",
     fontFamily: "ui-monospace, monospace",
   });
 

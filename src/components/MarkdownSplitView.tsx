@@ -78,7 +78,7 @@ export function MarkdownSplitView({
   const title = extractTitle(content);
 
   const loadFile = useCallback(async () => {
-    if (!workspaceRoot.trim()) {
+    if (!workspaceId) {
       setLoadError("Workspace is not available.");
       setLoading(false);
       return;
@@ -89,7 +89,7 @@ export function MarkdownSplitView({
 
     try {
       const fileContent = await invoke<string>("read_file_text", {
-        root: workspaceRoot,
+        workspaceId,
         relativePath: relPath,
       });
       openMarkdown(workspaceId, workspaceRoot, relPath, fileContent);
@@ -121,7 +121,7 @@ export function MarkdownSplitView({
     }, 2000);
 
     return () => window.clearInterval(id);
-  }, [loading, isDirty, workspaceRoot, relPath]);
+  }, [loading, isDirty, workspaceId, relPath]);
 
   const toggleEditorVisible = () => {
     setEditorVisible((prev) => {
@@ -177,7 +177,7 @@ export function MarkdownSplitView({
 
   const handleReloadExternal = async () => {
     const fileContent = await invoke<string>("read_file_text", {
-      root: workspaceRoot,
+      workspaceId,
       relativePath: relPath,
     });
     applyDiskContent(fileContent);

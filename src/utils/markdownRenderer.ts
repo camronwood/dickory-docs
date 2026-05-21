@@ -49,10 +49,12 @@ export function renderMarkdown(
       ],
       ALLOWED_ATTR: [
         "href", "title", "alt", "src", "width", "height",
-        "class", "id", "style",
+        "class", "id",
         "target", "rel",
         "data-mermaid-placeholder",
       ],
+      ALLOWED_URI_REGEXP:
+        /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
       ALLOW_DATA_ATTR: false,
     });
   }

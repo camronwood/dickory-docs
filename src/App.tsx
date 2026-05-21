@@ -21,6 +21,8 @@ import {
   type MermaidScanResult,
 } from "./utils/mermaidGallery";
 import { openExternalMarkdownFile } from "./utils/openExternalFile";
+import { WorkspaceSwitcherModal } from "./components/WorkspaceSwitcherModal";
+import { useWorkspaceSwitcherShortcut } from "./hooks/useWorkspaceSwitcherShortcut";
 
 type Selection =
   | null
@@ -75,8 +77,10 @@ export default function App() {
   const [galleryScope, setGalleryScope] = useState<GalleryScope>("workspace");
   const [galleryScanning, setGalleryScanning] = useState(false);
   const [galleryScanError, setGalleryScanError] = useState<string | null>(null);
+  const [workspaceSwitcherOpen, setWorkspaceSwitcherOpen] = useState(false);
 
   const workspaces = useFileExplorerStore((s) => s.workspaces);
+  const selectWorkspace = useFileExplorerStore((s) => s.selectWorkspace);
 
   const markdownWorkspaceRoot = useFileExplorerStore((s) => {
     if (!selection || selection.kind !== "markdown") return "";
@@ -87,6 +91,10 @@ export default function App() {
   const setSelectedPath = useFileExplorerStore((s) => s.setSelectedPath);
   const loadWorkspaces = useFileExplorerStore((s) => s.loadWorkspaces);
 
+  useWorkspaceSwitcherShortcut(() => setWorkspaceSwitcherOpen(true), {
+    enabled: !workspaceSwitcherOpen,
+  });
+
   useEffect(() => {
     saveMarkdownOnlyPreference(markdownOnly);
   }, [markdownOnly]);
@@ -95,12 +103,35 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const isPreview = params.get("preview") === "true";
     const workspaceId = params.get("workspace");
-    const filePath = params.get("path");
-    if (isPreview && workspaceId && filePath) {
+    const filePath = params.get("path")?.replace(/^\/+/, "");
+    if (!isPreview || !workspaceId || !filePath) return;
+
+    void (async () => {
+      await loadWorkspaces();
+      const store = useFileExplorerStore.getState();
+      const workspace = store.workspaces.find((w) => w.id === workspaceId);
+      if (!workspace) {
+        console.warn("Deep link: unknown workspace id", workspaceId);
+        return;
+      }
+      if (filePath.includes("..")) {
+        console.warn("Deep link: rejected path with ..", filePath);
+        return;
+      }
+      try {
+        await invoke("read_file_text", {
+          workspaceId,
+          relativePath: filePath,
+        });
+      } catch (err) {
+        console.warn("Deep link: file not readable under workspace", err);
+        return;
+      }
+      store.setActiveWorkspace(workspaceId);
       setPreviewOnly(true);
       setSelection({ kind: "markdown", workspaceId, path: filePath });
-    }
-  }, []);
+    })();
+  }, [loadWorkspaces]);
 
   const selectMarkdown = useCallback((workspaceId: string, path: string) => {
     if (!useMarkdownEditorStore.getState().confirmDiscardIfDirty()) return;
@@ -173,7 +204,7 @@ export default function App() {
 
       try {
         const scanned = await invoke<MermaidScanResult>("workspace_scan_mermaid", {
-          root: workspace.path,
+          workspaceId: opts.workspaceId,
         });
         const items = mapScannedBlocks(scanned.blocks);
         const scanStats: GalleryScanStats = {
@@ -270,13 +301,14 @@ export default function App() {
         onOpenGallery={activeWorkspaceId ? handleOpenGalleryFromExplorer : undefined}
         galleryScanError={galleryScanError}
         onDismissGalleryScanError={() => setGalleryScanError(null)}
+        onOpenWorkspaceSwitcher={() => setWorkspaceSwitcherOpen(true)}
       />
       <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         {!selection && <EmptyViewer />}
         {selection?.kind === "markdown" && previewOnly && (
           <MarkdownPreview
             key={`${selection.workspaceId}:${selection.path}`}
-            workspaceRoot={markdownWorkspaceRoot}
+            workspaceId={selection.workspaceId}
             filePath={selection.path}
             layout="embedded"
             onOpenGallery={handleOpenGalleryFromPreview}
@@ -297,6 +329,14 @@ export default function App() {
           <TextFileView path={selection.path} content={selection.content} />
         )}
       </div>
+
+      <WorkspaceSwitcherModal
+        isOpen={workspaceSwitcherOpen}
+        onClose={() => setWorkspaceSwitcherOpen(false)}
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
+        onSelect={(id) => void selectWorkspace(id)}
+      />
 
       {galleryScanning && <GalleryScanOverlay />}
 
